@@ -136,6 +136,7 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/edit-campaign/:id" element={                  <ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
               <Route
                 path="/integrations"
                 element={

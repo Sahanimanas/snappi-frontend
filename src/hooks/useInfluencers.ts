@@ -1,61 +1,42 @@
 import { useState, useEffect } from 'react';
-import { influencersAPI, Influencer as APIInfluencer } from '@/lib/api';
+import { influencersAPI, Influencer, InfluencerFilters } from '@/lib/api';
 
-export interface Influencer {
-  id: string;
-  name: string;
-  platform: string | null;
-  platform_link: string | null;
-  follower_count: number | null;
-  engagement_rate: number;
-  match_score: number | null;
-  categories: string | null;
-  location: string | null;
-  profile_image: string | null;
-  average_views: number | null;
-  created_at: string | null;
-  email: string | null;
+// Use the InfluencerFilters from api.ts which matches backend query params
+export interface InfluencerQueryParams extends InfluencerFilters {
+  // Additional frontend-specific params if needed
+}
+
+export interface PaginationData {
+  currentPage: number;
+  limit: number;
+  total: number;
+  pages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 interface UseInfluencersReturn {
   influencers: Influencer[];
+  pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
   canAccessContactInfo: (influencerId: string) => boolean;
   refetch: () => Promise<void>;
 }
 
-// Transform API influencer to frontend influencer format
-function transformInfluencer(apiInfluencer: APIInfluencer): Influencer {
-  return {
-    id: apiInfluencer._id,
-    name: apiInfluencer.name,
-    platform: apiInfluencer.platform || null,
-    platform_link: apiInfluencer.profileUrl || null,
-    follower_count: apiInfluencer.followers || null,
-    engagement_rate: apiInfluencer.engagement || 0,
-    match_score: null, // Not in API response
-    categories: apiInfluencer.categories?.join(', ') || apiInfluencer.niche?.join(', ') || null,
-    location: apiInfluencer.country || null,
-    profile_image: null, // Not in API response
-    average_views: apiInfluencer.avgViews || null,
-    created_at: apiInfluencer.createdAt || null,
-    email: apiInfluencer.email || null,
-  };
-}
-
-export function useInfluencers(): UseInfluencersReturn {
+/**
+ * Hook to fetch and manage influencers data
+ * Now uses the correct backend data structure without transformation
+ */
+export function useInfluencers(queryParams: InfluencerQueryParams = {}): UseInfluencersReturn {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Permission function - for now, always allow access if logged in
-   * Can be enhanced later with role-based access
-   */
+  // Check if user can access contact info (implement your logic here)
   const canAccessContactInfo = (influencerId: string): boolean => {
-    // For now, allow access to all logged-in users
-    // This can be enhanced with proper role checking
+    // TODO: Implement based on subscription/permission logic
     return true;
   };
 
@@ -64,38 +45,141 @@ export function useInfluencers(): UseInfluencersReturn {
       setLoading(true);
       setError(null);
 
-      const result = await influencersAPI.getAll();
+      // Call API with query params
+      const result = await influencersAPI.getAll(queryParams);
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch influencers');
       }
 
-      // Handle different response structures
-      const apiInfluencers = (result.data as any)?.influencers || result.data || [];
+      // Backend response structure:
+      // {
+      //   success: true,
+      //   count: 10,
+      //   pagination: { page, pages, total, limit, hasNextPage, hasPrevPage },
+      //   data: [...influencers]  // Array directly
+      // }
+      
+      // Extract influencers array (result.data is already the array)
+      const influencersData = result.data || [];
+      
+      // Extract pagination from top level (not nested in data)
+      const paginationData = (result as any).pagination || null;
 
-      if (Array.isArray(apiInfluencers)) {
-        const transformedInfluencers = apiInfluencers.map(transformInfluencer);
-        setInfluencers(transformedInfluencers);
+      // console.log('API Response:', result);
+      // console.log('Influencers Data:', influencersData);
+      // console.log('Pagination Data:', paginationData);
+
+      // Set influencers directly (no transformation needed)
+      if (Array.isArray(influencersData)) {
+        setInfluencers(influencersData);
       } else {
+        console.warn('Influencers data is not an array:', influencersData);
         setInfluencers([]);
+      }
+      
+      // Transform pagination if it exists
+      if (paginationData) {
+        setPagination({
+          currentPage: paginationData.page || paginationData.currentPage || 1,
+          limit: paginationData.limit || 10,
+          total: paginationData.totalItems || 0,
+          pages: paginationData.pages || 1,
+          hasNextPage: paginationData.hasNextPage || false,
+          hasPrevPage: paginationData.hasPrevPage || false,
+        });
+      } else {
+        setPagination(null);
       }
     } catch (err: any) {
       console.error('Error fetching influencers:', err);
       setError(err.message || 'Failed to fetch influencers');
+      setInfluencers([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // Re-fetch when query params change
   useEffect(() => {
-    fetchInfluencers();
-  }, []);
+    // Debounce search queries to avoid excessive API calls
+    const isSearchQuery = queryParams.search && queryParams.search.length > 0;
+    const debounceTime = isSearchQuery ? 300 : 0;
 
-  return {
-    influencers,
-    loading,
-    error,
-    canAccessContactInfo,
-    refetch: fetchInfluencers,
+    const timer = setTimeout(() => {
+      fetchInfluencers();
+    }, debounceTime);
+
+    return () => clearTimeout(timer);
+  }, [
+    // Track all query parameters
+    queryParams.page,
+    queryParams.limit,
+    queryParams.search,
+    queryParams.platform,
+    queryParams.minFollowers,
+    queryParams.maxFollowers,
+    queryParams.niche,
+    queryParams.country,
+  ]);
+
+  return { 
+    influencers, 
+    pagination, 
+    loading, 
+    error, 
+    canAccessContactInfo, 
+    refetch: fetchInfluencers 
   };
+}
+
+/**
+ * Helper function to format follower count
+ * Usage: formatFollowerCount(50000) => "50K"
+ */
+export function formatFollowerCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+  return count.toString();
+}
+
+/**
+ * Helper function to format engagement rate
+ * Usage: formatEngagementRate(5.67) => "5.7%"
+ */
+export function formatEngagementRate(rate: number): string {
+  return `${rate.toFixed(1)}%`;
+}
+
+/**
+ * Helper function to get platform color
+ */
+export function getPlatformColor(platform: string): string {
+  const colors: Record<string, string> = {
+    instagram: 'bg-pink-500',
+    youtube: 'bg-red-500',
+    tiktok: 'bg-black',
+    facebook: 'bg-blue-600',
+    twitter: 'bg-sky-500',
+    linkedin: 'bg-blue-700',
+    pinterest: 'bg-red-600',
+  };
+  return colors[platform.toLowerCase()] || 'bg-gray-500';
+}
+
+/**
+ * Helper function to get status badge variant
+ */
+export function getStatusBadgeVariant(status: string): string {
+  const variants: Record<string, string> = {
+    available: 'default',
+    busy: 'secondary',
+    unavailable: 'outline',
+  };
+  return variants[status.toLowerCase()] || 'outline';
 }

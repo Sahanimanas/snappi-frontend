@@ -87,19 +87,24 @@ export const SearchInfluencers = () => {
   const filteredInfluencers = influencers.filter(influencer => {
     const matchesQuery = !searchQuery ||
       influencer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (influencer.categories && influencer.categories.toLowerCase().includes(searchQuery.toLowerCase()));
+      (influencer.categories && influencer.categories.some(cat => 
+        cat.toLowerCase().includes(searchQuery.toLowerCase())
+      )) ||
+      (influencer.niche && influencer.niche.some(n => 
+        n.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
 
     const matchesPlatform = selectedPlatforms.length === 0 ||
-      (influencer.platform && selectedPlatforms.includes(influencer.platform.toLowerCase()));
+      selectedPlatforms.includes(influencer.platform.toLowerCase());
 
     const matchesLocation = !selectedLocation ||
-      (influencer.location && influencer.location.toLowerCase().includes(selectedLocation));
+      (influencer.country && influencer.country.toLowerCase().includes(selectedLocation));
 
-    const matchesFollowerRange = !influencer.follower_count ||
-      (influencer.follower_count >= followerRange[0] && influencer.follower_count <= followerRange[1]);
+    const matchesFollowerRange =
+      influencer.followers >= followerRange[0] && influencer.followers <= followerRange[1];
 
     const matchesEngagementRange =
-      (influencer.engagement_rate >= engagementRange[0] && influencer.engagement_rate <= engagementRange[1]);
+      influencer.engagement >= engagementRange[0] && influencer.engagement <= engagementRange[1];
 
     return matchesQuery && matchesPlatform && matchesLocation && matchesFollowerRange && matchesEngagementRange;
   });
@@ -146,6 +151,12 @@ Best regards,
         subject
       )}&body=${encodeURIComponent(body)}`;
     }, 500);
+  };
+
+  const formatFollowerCount = (count: number) => {
+    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+    return count.toString();
   };
 
   return (
@@ -229,9 +240,8 @@ Best regards,
                       { value: "tiktok", label: "TikTok", platform: "tiktok" },
                       { value: "youtube", label: "YouTube", platform: "youtube" },
                       { value: "facebook", label: "Facebook", platform: "facebook" },
-                      { value: "x", label: "X (Twitter)", platform: "twitter" },
-                      { value: "threads", label: "Threads", platform: "threads" },
-                      { value: "twitch", label: "Twitch", platform: "twitch" },
+                      { value: "twitter", label: "X (Twitter)", platform: "twitter" },
+                      { value: "linkedin", label: "LinkedIn", platform: "linkedin" },
                       { value: "pinterest", label: "Pinterest", platform: "pinterest" }
                     ].map((platform) => (
                       <div key={platform.value} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
@@ -436,7 +446,7 @@ Best regards,
                   </div>
                 ) : (
                   resultsToShow.map((influencer) => (
-                    <Card key={influencer.id} className="shadow-card hover:shadow-elegant transition-shadow duration-300">
+                    <Card key={influencer._id} className="shadow-card hover:shadow-elegant transition-shadow duration-300">
                       <CardContent className="p-4 md:p-6">
                         <div className="flex flex-col lg:flex-row gap-6">
                           {/* Profile Info */}
@@ -447,21 +457,23 @@ Best regards,
                             <div className="space-y-2">
                               <div>
                                 <h3 className="text-lg font-semibold">{influencer.name}</h3>
-                                {canAccessContactInfo(influencer.id) && influencer.email && (
+                                {canAccessContactInfo(influencer._id) && influencer.email && (
                                   <p className="text-sm text-muted-foreground break-all">{influencer.email}</p>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-2 text-sm">
                                 <div className="flex items-center space-x-1">
-                                  <PlatformIcon platform={influencer.platform || 'instagram'} />
-                                  <span>{influencer.platform || 'Unknown'}</span>
+                                  <PlatformIcon platform={influencer.platform} />
+                                  <span>{influencer.platform}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <MapPin className="h-4 w-4" />
-                                  <span>{influencer.location || 'Location not specified'}</span>
+                                  <span>{influencer.country || 'Location not specified'}</span>
                                 </div>
                               </div>
-                              <Badge variant="secondary">{influencer.categories || 'General'}</Badge>
+                              {influencer.categories && influencer.categories.length > 0 && (
+                                <Badge variant="secondary">{influencer.categories[0]}</Badge>
+                              )}
                             </div>
                           </div>
 
@@ -469,22 +481,19 @@ Best regards,
                           <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="text-center">
                               <div className="text-lg font-bold">
-                                {influencer.follower_count
-                                  ? (influencer.follower_count / 1000).toFixed(1) + 'K'
-                                  : 'N/A'
-                                }
+                                {formatFollowerCount(influencer.followers)}
                               </div>
                               <div className="text-xs text-muted-foreground">Followers</div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-bold text-success">
-                                {influencer.engagement_rate.toFixed(1)}%
+                                {influencer.engagement.toFixed(1)}%
                               </div>
                               <div className="text-xs text-muted-foreground">Engagement</div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-bold text-primary">
-                                {influencer.match_score ? influencer.match_score + '%' : 'N/A'}
+                                {influencer.matchScore ? influencer.matchScore + '%' : 'N/A'}
                               </div>
                               <div className="text-xs text-muted-foreground">Match Score</div>
                             </div>
@@ -505,21 +514,21 @@ Best regards,
                               size="sm"
                               className="w-full"
                               onClick={() =>
-                                shortlist.includes(influencer.id)
-                                  ? removeFromShortlist(influencer.id)
-                                  : addToShortlist(influencer.id)
+                                shortlist.includes(influencer._id)
+                                  ? removeFromShortlist(influencer._id)
+                                  : addToShortlist(influencer._id)
                               }
-                              variant={shortlist.includes(influencer.id) ? "secondary" : "default"}
+                              variant={shortlist.includes(influencer._id) ? "secondary" : "default"}
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              {shortlist.includes(influencer.id) ? "In Shortlist" : "Add to Shortlist"}
+                              {shortlist.includes(influencer._id) ? "In Shortlist" : "Add to Shortlist"}
                             </Button>
 
                             <Button
                               variant="outline"
                               size="sm"
                               className="w-full"
-                              onClick={() => window.open(influencer.platform_link || '#', "_blank", "noopener,noreferrer")}
+                              onClick={() => window.open(influencer.profileUrl || '#', "_blank", "noopener,noreferrer")}
                             >
                               View Profile
                             </Button>

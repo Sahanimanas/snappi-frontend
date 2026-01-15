@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,15 +21,25 @@ import { useToast } from "@/hooks/use-toast";
 export const CreateCampaign = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
 
   const [loading, setLoading] = useState(false);
+  const [fetchingCampaign, setFetchingCampaign] = useState(isEditMode);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     objective: "",
     type: "",
-    kpis: [] as string[],
+    kpis: {
+      impressions: false,
+      engagement: false,
+      clicks: false,
+      conversions: false,
+      sales: false,
+      reach: false,
+    },
     budget: "",
     startDate: "",
     endDate: "",
@@ -41,6 +51,72 @@ export const CreateCampaign = () => {
     gender: "",
     location: "",
   });
+
+  // Fetch campaign data if editing
+  useEffect(() => {
+    const fetchCampaign = async () => {
+      if (!id) return;
+      
+      setFetchingCampaign(true);
+      try {
+        const result = await campaignsAPI.getById(id);
+        
+        if (!result.success) {
+          toast({
+            title: "Error",
+            description: "Failed to load campaign data",
+            variant: "destructive",
+          });
+          navigate("/campaigns");
+          return;
+        }
+
+        const campaign = result.data;
+        
+        // Populate form with existing data
+        setFormData({
+          name: campaign.name || "",
+          description: campaign.description || "",
+          objective: campaign.objective || "",
+          type: campaign.campaignType || "",
+          kpis: campaign.kpis || {
+            impressions: false,
+            engagement: false,
+            clicks: false,
+            conversions: false,
+            sales: false,
+            reach: false,
+          },
+          budget: campaign.budget?.total?.toString() || "",
+          startDate: campaign.startDate 
+            ? new Date(campaign.startDate).toISOString().split('T')[0] 
+            : "",
+          endDate: campaign.endDate 
+            ? new Date(campaign.endDate).toISOString().split('T')[0] 
+            : "",
+          platforms: campaign.targetPlatforms || [],
+          targetAudience: campaign.targetAudience || "",
+          deliverables: campaign.deliverables?.[0]?.description || "",
+          compensation: campaign.compensationType || "",
+          ageRange: campaign.demographics?.ageRange?.[0] || "",
+          gender: campaign.demographics?.gender?.[0] || "",
+          location: campaign.demographics?.location?.countries?.[0] || "",
+        });
+      } catch (err) {
+        console.error("Error fetching campaign:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load campaign data",
+          variant: "destructive",
+        });
+        navigate("/campaigns");
+      } finally {
+        setFetchingCampaign(false);
+      }
+    };
+
+    fetchCampaign();
+  }, [id, navigate, toast]);
 
   // Generic change handler
   const handleInputChange = (
@@ -65,20 +141,18 @@ export const CreateCampaign = () => {
         return;
       }
 
-      // Prepare API payload
+      // Prepare API payload matching backend model
       const payload = {
         name: formData.name,
         description: formData.description || undefined,
         objective: formData.objective || undefined,
         campaignType: formData.type || undefined,
-        status: status as 'draft' | 'active',
+        status: status as 'draft' | 'active' | 'paused' | 'completed' | 'cancelled',
         budget: formData.budget
           ? { total: parseFloat(formData.budget) }
           : undefined,
-        timeline: {
-          startDate: formData.startDate || undefined,
-          endDate: formData.endDate || undefined,
-        },
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
         targetPlatforms: formData.platforms.length ? formData.platforms : [],
         demographics: {
           ageRange: formData.ageRange ? [formData.ageRange] : [],
@@ -86,26 +160,34 @@ export const CreateCampaign = () => {
           location: formData.location ? { countries: [formData.location] } : undefined,
         },
         compensationType: formData.compensation || undefined,
+        kpis: formData.kpis,
         deliverables: formData.deliverables
           ? [{ type: "post", quantity: 1, description: formData.deliverables }]
           : undefined,
       };
 
-      const result = await campaignsAPI.create(payload);
+      let result;
+      if (isEditMode) {
+        // Update existing campaign
+        result = await campaignsAPI.update(id!, payload);
+      } else {
+        // Create new campaign
+        result = await campaignsAPI.create(payload);
+      }
 
       if (!result.success) {
-        throw new Error(result.message || "Failed to create campaign");
+        throw new Error(result.message || `Failed to ${isEditMode ? 'update' : 'create'} campaign`);
       }
 
       toast({
-        title: "Campaign Created 🎉",
-        description: `Campaign "${formData.name}" saved successfully.`,
+        title: isEditMode ? "Campaign Updated 🎉" : "Campaign Created 🎉",
+        description: `Campaign "${formData.name}" ${isEditMode ? 'updated' : 'saved'} successfully.`,
       });
       navigate("/campaigns");
     } catch (err: any) {
-      console.error("Failed to create campaign:", err);
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} campaign:`, err);
       toast({
-        title: "Error Creating Campaign",
+        title: `Error ${isEditMode ? 'Updating' : 'Creating'} Campaign`,
         description: err?.message ?? "Unexpected error occurred.",
         variant: "destructive",
       });
@@ -119,6 +201,14 @@ export const CreateCampaign = () => {
     await handleSubmit({ preventDefault: () => {} } as any, "draft");
   };
 
+  if (fetchingCampaign) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading campaign data...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -128,9 +218,13 @@ export const CreateCampaign = () => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Create New Campaign</h1>
+              <h1 className="text-3xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">
+                {isEditMode ? "Edit Campaign" : "Create New Campaign"}
+              </h1>
               <p className="text-muted-foreground">
-                Set up your influencer marketing campaign
+                {isEditMode 
+                  ? "Update your influencer marketing campaign" 
+                  : "Set up your influencer marketing campaign"}
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -195,19 +289,13 @@ export const CreateCampaign = () => {
                           Brand Awareness
                         </SelectItem>
                         <SelectItem value="engagement">
-                          Engagement & Community
-                        </SelectItem>
-                        <SelectItem value="content">
-                          Content Creation (UGC)
+                          Engagement
                         </SelectItem>
                         <SelectItem value="traffic">
-                          Traffic Generation
+                          Traffic
                         </SelectItem>
-                        <SelectItem value="lead">Lead Generation</SelectItem>
-                        <SelectItem value="sales">Sales & Conversions</SelectItem>
-                        <SelectItem value="affiliate">
-                          Affiliate / Performance
-                        </SelectItem>
+                        <SelectItem value="lead_generation">Lead Generation</SelectItem>
+                        <SelectItem value="increase_sales">Sales</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -228,8 +316,8 @@ export const CreateCampaign = () => {
                         <SelectItem value="sponsored_post">Sponsored Post</SelectItem>
                         <SelectItem value="product_review">Product Review</SelectItem>
                         <SelectItem value="giveaway">Giveaway</SelectItem>
-                        <SelectItem value="takeover">Account Takeover</SelectItem>
-                        <SelectItem value="ambassador">Brand Ambassador</SelectItem>
+                        <SelectItem value="brand_ambassador">Brand Ambassador</SelectItem>
+                        <SelectItem value="affiliate">Affiliate</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -239,32 +327,31 @@ export const CreateCampaign = () => {
                     <Label>Key KPIs</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        "Impressions",
-                        "Engagement",
-                        "Leads",
-                        "Sales",
-                        "Conversions",
+                        { key: "impressions", label: "Impressions" },
+                        { key: "engagement", label: "Engagement" },
+                        { key: "clicks", label: "Clicks" },
+                        { key: "conversions", label: "Conversions" },
+                        { key: "sales", label: "Sales" },
+                        { key: "reach", label: "Reach" },
                       ].map((kpi) => (
                         <label
-                          key={kpi}
+                          key={kpi.key}
                           className="flex items-center space-x-2 text-sm"
                         >
                           <input
                             type="checkbox"
+                            checked={formData.kpis[kpi.key as keyof typeof formData.kpis]}
                             onChange={(e) => {
-                              if (e.target.checked)
-                                setFormData({
-                                  ...formData,
-                                  kpis: [...formData.kpis, kpi],
-                                });
-                              else
-                                setFormData({
-                                  ...formData,
-                                  kpis: formData.kpis.filter((k) => k !== kpi),
-                                });
+                              setFormData({
+                                ...formData,
+                                kpis: {
+                                  ...formData.kpis,
+                                  [kpi.key]: e.target.checked,
+                                },
+                              });
                             }}
                           />
-                          <span>{kpi}</span>
+                          <span>{kpi.label}</span>
                         </label>
                       ))}
                     </div>
@@ -317,13 +404,12 @@ export const CreateCampaign = () => {
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       "instagram",
-                      "tiktok",
                       "youtube",
+                      "tiktok",
                       "facebook",
                       "twitter",
-                      "twitch",
-                      "pinterest",
                       "linkedin",
+                      "pinterest",
                     ].map((platform) => (
                       <label
                         key={platform}
@@ -331,6 +417,7 @@ export const CreateCampaign = () => {
                       >
                         <input
                           type="checkbox"
+                          checked={formData.platforms.includes(platform)}
                           onChange={(e) => {
                             if (e.target.checked)
                               setFormData({
@@ -360,6 +447,7 @@ export const CreateCampaign = () => {
                       <div>
                         <Label>Age Range</Label>
                         <Select
+                          value={formData.ageRange}
                           onValueChange={(v) =>
                             setFormData({ ...formData, ageRange: v })
                           }
@@ -368,7 +456,7 @@ export const CreateCampaign = () => {
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
-                            {["13-17", "18-24", "25-34", "35-44", "45+"].map(
+                            {["13-17", "18-24", "25-34", "35-44", "45-54", "55+"].map(
                               (a) => (
                                 <SelectItem key={a} value={a}>
                                   {a}
@@ -382,6 +470,7 @@ export const CreateCampaign = () => {
                       <div>
                         <Label>Gender</Label>
                         <Select
+                          value={formData.gender}
                           onValueChange={(v) =>
                             setFormData({ ...formData, gender: v })
                           }
@@ -390,7 +479,7 @@ export const CreateCampaign = () => {
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
-                            {["all", "male", "female", "non-binary"].map(
+                            {["all", "male", "female"].map(
                               (g) => (
                                 <SelectItem key={g} value={g}>
                                   {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -405,6 +494,7 @@ export const CreateCampaign = () => {
                         <Label>Location</Label>
                         <Input
                           name="location"
+                          value={formData.location}
                           placeholder="Country / City"
                           onChange={handleInputChange}
                         />
@@ -424,16 +514,10 @@ export const CreateCampaign = () => {
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="monetary">Paid Promotion</SelectItem>
-                        <SelectItem value="affiliate">
-                          Affiliate Commission
-                        </SelectItem>
-                        <SelectItem value="product">
-                          Product Gifting
-                        </SelectItem>
-                        <SelectItem value="hybrid">
-                          Hybrid (Paid + Product)
-                        </SelectItem>
+                        <SelectItem value="monetary">Monetary</SelectItem>
+                        <SelectItem value="product">Product</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                        <SelectItem value="affiliate">Affiliate</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -472,7 +556,9 @@ export const CreateCampaign = () => {
                 Save as Draft
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Campaign"}
+                {loading 
+                  ? (isEditMode ? "Updating..." : "Creating...") 
+                  : (isEditMode ? "Update Campaign" : "Create Campaign")}
               </Button>
             </div>
           </form>

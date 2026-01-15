@@ -163,16 +163,47 @@ export interface Influencer {
     name: string;
     username: string;
     email?: string;
-    platform: string;
+    platform: 'instagram' | 'youtube' | 'tiktok' | 'facebook' | 'twitter' | 'linkedin' | 'pinterest';
     profileUrl: string;
+    profileImage?: string;
     followers: number;
     engagement: number;
-    avgViews: number;
+    avgViews?: number;
+    matchScore?: number;
     niche: string[];
     categories: string[];
-    country: string;
-    status: 'available' | 'busy' | 'inactive';
+    country?: string;
+    city?: string;
+    languages?: string[];
+    demographics?: {
+        ageRange?: '13-17' | '18-24' | '25-34' | '35-44' | '45-54' | '55+';
+        gender?: {
+            male?: number;
+            female?: number;
+            other?: number;
+        };
+        topCountries?: Array<{
+            country: string;
+            percentage: number;
+        }>;
+    };
+    status: 'available' | 'busy' | 'unavailable';
     bio?: string;
+    contactInfo?: {
+        phone?: string;
+        email?: string;
+        preferredContact?: 'email' | 'phone' | 'platform';
+    };
+    pricing?: {
+        post?: number;
+        story?: number;
+        video?: number;
+        reel?: number;
+    };
+    verified?: boolean;
+    rating?: number;
+    totalCollaborations?: number;
+    addedBy?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -243,49 +274,89 @@ export interface Campaign {
     _id: string;
     name: string;
     description?: string;
-    objective?: string;
-    campaignType?: string;
-    status: 'draft' | 'active' | 'paused' | 'completed';
+    objective?: 'brand_awareness' | 'increase_sales' | 'engagement' | 'lead_generation' | 'traffic';
+    campaignType?: 'sponsored_post' | 'product_review' | 'giveaway' | 'brand_ambassador' | 'affiliate';
+    status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
     budget?: {
         total: number;
         spent?: number;
         remaining?: number;
     };
-    timeline?: {
-        startDate?: string;
-        endDate?: string;
-    };
-    targetPlatforms: string[];
+    startDate?: string;
+    endDate?: string;
+    targetPlatforms: Array<'instagram' | 'youtube' | 'tiktok' | 'facebook' | 'twitter' | 'linkedin' | 'pinterest'>;
     demographics?: {
-        ageRange?: string[];
-        gender?: string[];
+        ageRange?: Array<'13-17' | '18-24' | '25-34' | '35-44' | '45-54' | '55+'>;
+        gender?: Array<'male' | 'female' | 'all'>;
         location?: {
             countries?: string[];
             cities?: string[];
         };
     };
-    compensationType?: string;
+    compensationType?: 'monetary' | 'product' | 'both' | 'affiliate';
+    kpis?: {
+        impressions?: boolean;
+        engagement?: boolean;
+        clicks?: boolean;
+        conversions?: boolean;
+        sales?: boolean;
+        reach?: boolean;
+    };
     deliverables?: Array<{
-        type: string;
+        type: 'post' | 'story' | 'reel' | 'video' | 'blog' | 'review';
         quantity: number;
         description?: string;
     }>;
-    influencers?: Array<{
-        influencer: string | Influencer;
-        status: string;
-        compensation?: {
-            amount: number;
-            type: string;
-        };
+    contract?: {
+        templateUsed?: boolean;
+        fileUrl?: string;
+        uploadedAt?: string;
+    };
+    performance?: {
+        totalReach?: number;
+        totalEngagement?: number;
+        totalClicks?: number;
+        totalConversions?: number;
+        roi?: number;
+    };
+    influencers?: string[]; // Array of Influencer IDs
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CampaignInfluencer {
+    _id: string;
+    campaign: string | Campaign;
+    influencer: string | Influencer;
+    status: 'invited' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+    compensation?: {
+        amount?: number;
+        type?: 'monetary' | 'product' | 'both' | 'affiliate';
+        paid?: boolean;
+    };
+    trackingLink?: string;
+    deliverables?: Array<{
+        type: 'post' | 'story' | 'reel' | 'video' | 'blog' | 'review';
+        url?: string;
+        submittedAt?: string;
+        approved?: boolean;
+        approvedAt?: string;
     }>;
-    metrics?: {
+    performance?: {
         reach?: number;
         impressions?: number;
         engagement?: number;
+        engagementRate?: number;
         clicks?: number;
         conversions?: number;
+        sales?: number;
+        lastUpdated?: string;
     };
-    owner: string;
+    notes?: string;
+    invitedAt?: string;
+    acceptedAt?: string;
+    completedAt?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -295,14 +366,17 @@ export interface CampaignFilters {
     limit?: number;
     status?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 export interface CampaignStats {
     totalCampaigns: number;
-    byStatus: Record<string, number>;
+    activeCampaigns: number;
     totalBudget: number;
     totalSpent: number;
-    avgBudget: number;
+    totalReach: number;
+    avgROI: number;
 }
 
 export const campaignsAPI = {
@@ -344,21 +418,36 @@ export const campaignsAPI = {
     addInfluencer: async (
         campaignId: string,
         influencerId: string,
-        compensation?: { amount: number; type: string },
+        compensation?: { amount: number; type: 'monetary' | 'product' | 'both' | 'affiliate' },
         trackingLink?: string
     ) => {
-        return apiRequest(`/campaigns/${campaignId}/influencers`, {
+        return apiRequest<CampaignInfluencer>(`/campaigns/${campaignId}/influencers`, {
             method: 'POST',
             body: JSON.stringify({ influencerId, compensation, trackingLink }),
         });
     },
 
     getPerformance: async (campaignId: string) => {
-        return apiRequest<any>(`/campaigns/${campaignId}/performance`, { method: 'GET' });
+        return apiRequest<{
+            campaignOverview: {
+                name: string;
+                status: string;
+                budget: Campaign['budget'];
+                performance: Campaign['performance'];
+            };
+            influencerPerformances: CampaignInfluencer[];
+        }>(`/campaigns/${campaignId}/performance`, { method: 'GET' });
     },
 
     getStats: async () => {
-        return apiRequest<CampaignStats>('/campaigns/stats/overview', { method: 'GET' });
+        return apiRequest<{
+            overview: CampaignStats;
+            byStatus: Array<{
+                _id: string;
+                count: number;
+                totalBudget: number;
+            }>;
+        }>('/campaigns/stats/overview', { method: 'GET' });
     },
 };
 

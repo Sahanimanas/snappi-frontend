@@ -323,7 +323,7 @@ export const Campaigns = () => {
                               <div>
                                 <p className="text-muted-foreground">Reach</p>
                                 <p className="font-medium">
-                                  {campaign.metrics?.reach?.toLocaleString() || "—"}
+                                  {campaign.performance?.totalReach?.toLocaleString() || "—"}
                                 </p>
                               </div>
                               <div>
@@ -331,7 +331,7 @@ export const Campaigns = () => {
                                   Engagement
                                 </p>
                                 <p className="font-medium">
-                                  {campaign.metrics?.engagement || "—"}
+                                  {campaign.performance?.totalEngagement?.toLocaleString() || "—"}
                                 </p>
                               </div>
                             </div>
@@ -342,7 +342,7 @@ export const Campaigns = () => {
                                   Start Date:
                                 </span>
                                 <span className="font-medium">
-                                  {campaign.timeline?.startDate ? new Date(campaign.timeline.startDate).toLocaleDateString() : "—"}
+                                  {campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : "—"}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-sm md:w-3/4">
@@ -350,7 +350,7 @@ export const Campaigns = () => {
                                   End Date:
                                 </span>
                                 <span className="font-medium">
-                                  {campaign.timeline?.endDate ? new Date(campaign.timeline.endDate).toLocaleDateString() : "—"}
+                                  {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : "—"}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-sm md:w-3/4">
@@ -390,6 +390,14 @@ export const Campaigns = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link 
+                                    to={`/edit-campaign/${campaign._id}`}
+                                    className="cursor-pointer"
+                                  >
+                                    Edit Campaign
+                                  </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleComplete(campaign)}
                                   className="cursor-pointer"
