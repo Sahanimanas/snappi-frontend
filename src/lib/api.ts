@@ -31,11 +31,11 @@ export const setStoredUser = (user: any): void => {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
-// API request helper
+// API request helper with proper error handling
 async function apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}
-): Promise<{ success: boolean; data?: T; message?: string; token?: string; error?: string }> {
+): Promise<{ success: boolean; data?: T; message?: string; token?: string; error?: string; total?: number; count?: number; pagination?: any }> {
     const token = getToken();
 
     const headers: HeadersInit = {
@@ -50,12 +50,28 @@ async function apiRequest<T>(
             headers,
         });
 
-        const data = await response.json();
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            data = { message: await response.text() };
+        }
+
+        // Only logout on 401 Unauthorized
+        if (response.status === 401) {
+            removeToken();
+            return {
+                success: false,
+                message: data.message || 'Session expired. Please login again.',
+                error: 'unauthorized',
+            };
+        }
 
         if (!response.ok) {
             return {
                 success: false,
-                message: data.message || 'An error occurred',
+                message: data.message || `Error: ${response.status}`,
                 error: data.message || 'Request failed',
             };
         }
@@ -227,6 +243,47 @@ export interface InfluencerStats {
     avgFollowers: number;
 }
 
+export interface SearchFilters {
+    search?: string;
+    platforms?: string[];
+    niche?: string;
+    location?: string;
+    keywords?: string;
+    minFollowers?: number;
+    maxFollowers?: number;
+    minEngagement?: number;
+    maxEngagement?: number;
+    campaignObjective?: 'awareness' | 'sales' | 'both';
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    limit?: number;
+    skip?: number;
+}
+
+export interface FilterOptions {
+    platforms: { value: string; count: number }[];
+    niches: { value: string; count: number }[];
+    categories: { value: string; count: number }[];
+    countries: { value: string; count: number }[];
+    followerRange: { minFollowers: number; maxFollowers: number; avgFollowers: number };
+    engagementRange: { minEngagement: number; maxEngagement: number; avgEngagement: number };
+}
+
+export interface SearchSuggestions {
+    names: string[];
+    niches: string[];
+    categories: string[];
+}
+
+export interface RecommendationParams {
+    campaignObjective?: string;
+    targetAudience?: string;
+    budget?: number;
+    platforms?: string[];
+    niche?: string;
+    limit?: number;
+}
+
 export const influencersAPI = {
     getAll: async (filters: InfluencerFilters = {}) => {
         const params = new URLSearchParams();
@@ -239,6 +296,10 @@ export const influencersAPI = {
             `/influencers?${params.toString()}`,
             { method: 'GET' }
         );
+    },
+
+    getAllNoPagination: async () => {
+        return apiRequest<Influencer[]>('/influencers/all', { method: 'GET' });
     },
 
     getById: async (id: string) => {
@@ -265,6 +326,43 @@ export const influencersAPI = {
 
     getStats: async () => {
         return apiRequest<InfluencerStats>('/influencers/stats/overview', { method: 'GET' });
+    },
+
+    search: async (filters: SearchFilters) => {
+        const cleanedFilters = {
+            ...filters,
+            niche: filters.niche === 'all' ? undefined : filters.niche,
+            location: filters.location === 'all' ? undefined : filters.location,
+        };
+
+        return apiRequest<Influencer[]>('/influencers/search', {
+            method: 'POST',
+            body: JSON.stringify(cleanedFilters),
+        });
+    },
+
+    getSearchSuggestions: async (query: string) => {
+        if (!query || query.length < 2) {
+            return {
+                success: true,
+                data: { names: [], niches: [], categories: [] } as SearchSuggestions
+            };
+        }
+        return apiRequest<SearchSuggestions>(
+            `/influencers/search/suggestions?q=${encodeURIComponent(query)}`,
+            { method: 'GET' }
+        );
+    },
+
+    getFilterOptions: async () => {
+        return apiRequest<FilterOptions>('/influencers/search/filters', { method: 'GET' });
+    },
+
+    getRecommendations: async (params: RecommendationParams) => {
+        return apiRequest<Influencer[]>('/influencers/search/recommendations', {
+            method: 'POST',
+            body: JSON.stringify(params),
+        });
     },
 };
 
@@ -319,7 +417,8 @@ export interface Campaign {
         totalConversions?: number;
         roi?: number;
     };
-    influencers?: string[]; // Array of Influencer IDs
+    influencers?: string[];
+    influencerCount?: number;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -453,28 +552,156 @@ export const campaignsAPI = {
 
 // ==================== DASHBOARD API ====================
 
-export interface DashboardData {
-    stats: {
-        activeCampaigns: number;
-        totalReach: number;
-        campaignROI: number;
-        totalSpend: number;
+// Top performing influencer interface
+export interface TopInfluencer {
+    _id: string;
+    name: string;
+    username: string;
+    profileImage?: string;
+    followers: number;
+    followersFormatted?: string;
+    engagement: number;
+    engagementFormatted?: string;
+    platform: string;
+    niche: string[];
+    verified: boolean;
+    matchScore: number;
+}
+
+// Dashboard stats interface
+export interface DashboardStats {
+    activeCampaigns: {
+        value: number;
+        change: number;
+        changeLabel: string;
     };
-    recentCampaigns: Campaign[];
-    topInfluencers: Influencer[];
+    totalReach: {
+        value: number;
+        formatted: string;
+        changePercent: number;
+        changeLabel: string;
+    };
+    campaignROI: {
+        value: number;
+        formatted: string;
+        changePercent: number;
+        changeLabel: string;
+    };
+    totalSpend: {
+        value: number;
+        formatted: string;
+        changePercent: number;
+        changeLabel: string;
+    };
+}
+
+// Recent campaign interface for dashboard
+export interface RecentCampaign {
+    _id: string;
+    name: string;
+    status: string;
+    budget: number;
+    spent: number;
+    influencerCount: number;
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+}
+
+// Full dashboard data interface
+export interface DashboardData {
+    stats: DashboardStats;
+    recentCampaigns: RecentCampaign[];
+    topPerformingInfluencers: TopInfluencer[];
+    summary: {
+        totalCampaigns: number;
+        totalBudget: number;
+        totalInfluencersWorkedWith: number;
+    };
 }
 
 export const dashboardAPI = {
+    /**
+     * Get complete dashboard overview
+     */
     getOverview: async () => {
         return apiRequest<DashboardData>('/dashboard', { method: 'GET' });
     },
 
+    /**
+     * Get dashboard stats only (lightweight)
+     */
+    getStats: async () => {
+        return apiRequest<{
+            activeCampaigns: number;
+            totalReach: string;
+            totalReachRaw: number;
+            campaignROI: string;
+            campaignROIRaw: number;
+            totalSpend: string;
+            totalSpendRaw: number;
+        }>('/dashboard/stats', { method: 'GET' });
+    },
+
+    /**
+     * Get recent campaigns for dashboard
+     */
+    getRecentCampaigns: async (limit: number = 5) => {
+        return apiRequest<RecentCampaign[]>(`/dashboard/campaigns/recent?limit=${limit}`, { method: 'GET' });
+    },
+
+    /**
+     * Get top performing influencers (sorted by engagement rate)
+     */
+    getTopInfluencers: async (limit: number = 5, sortBy: 'engagement' | 'followers' | 'matchScore' = 'engagement') => {
+        return apiRequest<TopInfluencer[]>(`/dashboard/influencers/top?limit=${limit}&sortBy=${sortBy}`, { method: 'GET' });
+    },
+
+    /**
+     * Get dashboard analytics for charts
+     */
+    getAnalytics: async (period: '7days' | '30days' | '90days' | '12months' = '30days') => {
+        return apiRequest<{
+            period: string;
+            campaignsInPeriod: number;
+            statusBreakdown: Array<{ status: string; count: number }>;
+            platformBreakdown: Array<{ platform: string; count: number }>;
+            monthlyTrend: Array<{ month: string; spent: number; budget: number; campaigns: number }>;
+        }>(`/dashboard/analytics?period=${period}`, { method: 'GET' });
+    },
+
+    /**
+     * Get influencer dashboard (for influencer users)
+     */
     getInfluencerDashboard: async () => {
-        return apiRequest<any>('/dashboard/influencers', { method: 'GET' });
+        return apiRequest<any>('/dashboard/influencer', { method: 'GET' });
     },
 };
 
-// Export a default API object
+// ============================================
+// Helper functions
+// ============================================
+export const isAuthenticated = (): boolean => {
+    return !!getToken();
+};
+
+export const isAuthError = (result: { error?: string }): boolean => {
+    return result.error === 'unauthorized';
+};
+
+export const formatNumber = (num: number): string => {
+    if (num >= 1000000000) {
+        return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+    }
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return num.toString();
+};
+
 export default {
     auth: authAPI,
     influencers: influencersAPI,

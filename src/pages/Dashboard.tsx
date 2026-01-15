@@ -17,81 +17,91 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { dashboardAPI, campaignsAPI, Campaign } from "@/lib/api";
+import { 
+  dashboardAPI, 
+  campaignsAPI, 
+  Campaign, 
+  TopInfluencer, 
+  RecentCampaign,
+  formatNumber 
+} from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import ReferralCard from "@/components/referrals/ReferralCard";
 
-// Static data for top influencers (will be replaced when backend is ready)
-const topInfluencers = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    handle: "@sarahjstyle",
-    platform: "Instagram",
-    followers: "24.5K",
-    engagement: "6.2%",
-    niche: "Fashion",
-    matchScore: 94
-  },
-  {
-    id: 2,
-    name: "Mike Chen",
-    handle: "@techreviewmike",
-    platform: "YouTube",
-    followers: "18.3K",
-    engagement: "8.1%",
-    niche: "Technology",
-    matchScore: 89
-  },
-  {
-    id: 3,
-    name: "Emma Wellness",
-    handle: "@emmawellness",
-    platform: "TikTok",
-    followers: "32.1K",
-    engagement: "7.4%",
-    niche: "Health & Wellness",
-    matchScore: 92
-  }
-];
+// Interface for dashboard stats
+interface DashboardStatsData {
+  activeCampaigns: number;
+  activeCampaignsChange: number;
+  totalReach: string;
+  totalReachChange: number;
+  campaignROI: string;
+  campaignROIChange: number;
+  totalSpend: string;
+  totalSpendChange: number;
+}
 
 export const Dashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Loading states
   const [loading, setLoading] = useState(true);
-  const [activeCount, setActiveCount] = useState(0);
-  const [totalBudget, setTotalBudget] = useState(0);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [influencersLoading, setInfluencersLoading] = useState(true);
+  
+  // Data states
+  const [stats, setStats] = useState<DashboardStatsData>({
+    activeCampaigns: 0,
+    activeCampaignsChange: 0,
+    totalReach: "0",
+    totalReachChange: 0,
+    campaignROI: "0%",
+    campaignROIChange: 0,
+    totalSpend: "$0",
+    totalSpendChange: 0,
+  });
+  const [campaigns, setCampaigns] = useState<RecentCampaign[]>([]);
+  const [topInfluencers, setTopInfluencers] = useState<TopInfluencer[]>([]);
 
+  // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setInfluencersLoading(true);
       
       try {
-        // Try to get dashboard overview first
+        // Fetch main dashboard data
         const dashboardResult = await dashboardAPI.getOverview();
         
         if (dashboardResult.success && dashboardResult.data) {
           const data = dashboardResult.data;
-          setActiveCount(data.stats?.activeCampaigns || 0);
-          setTotalBudget(data.stats?.totalSpend || 0);
+          
+          // Set stats
+          if (data.stats) {
+            setStats({
+              activeCampaigns: data.stats.activeCampaigns?.value || 0,
+              activeCampaignsChange: data.stats.activeCampaigns?.change || 0,
+              totalReach: data.stats.totalReach?.formatted || "0",
+              totalReachChange: data.stats.totalReach?.changePercent || 0,
+              campaignROI: data.stats.campaignROI?.formatted || "0%",
+              campaignROIChange: data.stats.campaignROI?.changePercent || 0,
+              totalSpend: data.stats.totalSpend?.formatted || "$0",
+              totalSpendChange: data.stats.totalSpend?.changePercent || 0,
+            });
+          }
+          
+          // Set recent campaigns
           if (data.recentCampaigns) {
             setCampaigns(data.recentCampaigns);
           }
-        } else {
-          // Fallback to campaigns API
-          const campaignsResult = await campaignsAPI.getAll({ limit: 5 });
-          if (campaignsResult.success && campaignsResult.data) {
-            const campaignData = (campaignsResult.data as any).campaigns || campaignsResult.data;
-            if (Array.isArray(campaignData)) {
-              setCampaigns(campaignData);
-              const active = campaignData.filter((c: Campaign) => c.status === 'active').length;
-              setActiveCount(active);
-              const total = campaignData.reduce((sum: number, c: Campaign) => sum + (c.budget?.total || 0), 0);
-              setTotalBudget(total);
-            }
+          
+          // Set top influencers (already sorted by engagement from backend)
+          if (data.topPerformingInfluencers) {
+            setTopInfluencers(data.topPerformingInfluencers);
           }
+        } else {
+          // Fallback: fetch data from individual endpoints
+          await fetchFallbackData();
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -100,15 +110,65 @@ export const Dashboard = () => {
           description: "Failed to load dashboard data",
           variant: "destructive",
         });
+        // Try fallback
+        await fetchFallbackData();
       } finally {
         setLoading(false);
+        setInfluencersLoading(false);
+      }
+    };
+
+    // Fallback function to fetch data from individual endpoints
+    const fetchFallbackData = async () => {
+      try {
+        // Fetch campaigns
+        const campaignsResult = await campaignsAPI.getAll({ limit: 5 });
+        if (campaignsResult.success && campaignsResult.data) {
+          const campaignData = (campaignsResult.data as any).campaigns || campaignsResult.data;
+          if (Array.isArray(campaignData)) {
+            const formattedCampaigns: RecentCampaign[] = campaignData.map((c: Campaign) => ({
+              _id: c._id,
+              name: c.name,
+              status: c.status,
+              budget: c.budget?.total || 0,
+              spent: c.budget?.spent || 0,
+              influencerCount: c.influencers?.length || 0,
+              createdAt: c.createdAt,
+            }));
+            setCampaigns(formattedCampaigns);
+            
+            // Calculate stats from campaigns
+            const active = campaignData.filter((c: Campaign) => c.status === 'active').length;
+            const totalSpent = campaignData.reduce((sum: number, c: Campaign) => sum + (c.budget?.spent || 0), 0);
+            
+            setStats(prev => ({
+              ...prev,
+              activeCampaigns: active,
+              totalSpend: `$${totalSpent.toLocaleString()}`,
+            }));
+          }
+        }
+
+        // Fetch top influencers separately (sorted by engagement)
+        const influencersResult = await dashboardAPI.getTopInfluencers(5, 'engagement');
+        if (influencersResult.success && influencersResult.data) {
+          setTopInfluencers(influencersResult.data);
+        }
+      } catch (error) {
+        console.error("Error in fallback data fetch:", error);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [toast]);
 
   const userName = user?.name?.split(' ')[0] || 'User';
+
+  // Helper function to format change value for display
+  const formatChange = (value: number, isPercent: boolean = false): string => {
+    const sign = value >= 0 ? '+' : '';
+    return isPercent ? `${sign}${value}%` : `${sign}${value}`;
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -138,26 +198,38 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <StatsCard
               title="Active Campaigns"
-              value={loading ? "..." : activeCount.toLocaleString()}
-              change={{ value: "+2", type: "increase" }}
+              value={loading ? "..." : stats.activeCampaigns.toString()}
+              change={{ 
+                value: formatChange(stats.activeCampaignsChange), 
+                type: stats.activeCampaignsChange >= 0 ? "increase" : "decrease" 
+              }}
               icon={<Target className="h-4 w-4" />}
             />
             <StatsCard
               title="Total Reach"
-              value="2.4M"
-              change={{ value: "+23%", type: "increase" }}
+              value={loading ? "..." : stats.totalReach}
+              change={{ 
+                value: formatChange(stats.totalReachChange, true), 
+                type: stats.totalReachChange >= 0 ? "increase" : "decrease" 
+              }}
               icon={<Users className="h-4 w-4" />}
             />
             <StatsCard
               title="Campaign ROI"
-              value="245%"
-              change={{ value: "+12%", type: "increase" }}
+              value={loading ? "..." : stats.campaignROI}
+              change={{ 
+                value: formatChange(stats.campaignROIChange, true), 
+                type: stats.campaignROIChange >= 0 ? "increase" : "decrease" 
+              }}
               icon={<TrendingUp className="h-4 w-4" />}
             />
             <StatsCard
               title="Total Spend"
-              value={loading ? "..." : `$${totalBudget.toLocaleString()}`}
-              change={{ value: "+8%", type: "increase" }}
+              value={loading ? "..." : stats.totalSpend}
+              change={{ 
+                value: formatChange(stats.totalSpendChange, true), 
+                type: stats.totalSpendChange >= 0 ? "increase" : "decrease" 
+              }}
               icon={<DollarSign className="h-4 w-4" />}
             />
           </div>
@@ -197,13 +269,15 @@ export const Dashboard = () => {
                           </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-muted-foreground">
-                          <span>{campaign.influencers?.length || 0} influencers</span>
-                          <span>${campaign.budget?.total?.toLocaleString() || 0}</span>
+                          <span>{campaign.influencerCount || 0} influencers</span>
+                          <span>${(campaign.budget || 0).toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="flex justify-between sm:block text-right">
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 sm:h-8 sm:w-8">
-                          <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 sm:h-8 sm:w-8" asChild>
+                          <Link to={`/campaigns/${campaign._id}`}>
+                            <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -212,7 +286,7 @@ export const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Top Influencers */}
+            {/* Top Influencers - Real data sorted by engagement rate */}
             <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg md:text-xl">Top Performing</CardTitle>
@@ -221,29 +295,54 @@ export const Dashboard = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {topInfluencers.map((influencer) => (
-                  <div key={influencer.id} className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-primary-foreground font-medium text-xs md:text-sm">
-                        {influencer.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="overflow-hidden">
-                        <div className="font-medium text-sm md:text-base truncate">{influencer.name}</div>
-                        <div className="text-xs md:text-sm text-muted-foreground truncate">{influencer.handle}</div>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-1 shrink-0">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Badge variant="secondary" className="text-[10px] md:text-xs">
-                          {influencer.matchScore}%
-                        </Badge>
-                      </div>
-                      <div className="text-[10px] md:text-xs text-muted-foreground">
-                        {influencer.followers} • {influencer.engagement}
-                      </div>
-                    </div>
+                {influencersLoading ? (
+                  <div className="text-center py-4">Loading influencers...</div>
+                ) : topInfluencers.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No influencers found.
                   </div>
-                ))}
+                ) : (
+                  topInfluencers.map((influencer) => (
+                    <div key={influencer._id} className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        {influencer.profileImage ? (
+                          <img 
+                            src={influencer.profileImage} 
+                            alt={influencer.name}
+                            className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-primary-foreground font-medium text-xs md:text-sm">
+                            {influencer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </div>
+                        )}
+                        <div className="overflow-hidden">
+                          <div className="font-medium text-sm md:text-base truncate flex items-center gap-1">
+                            {influencer.name}
+                            {influencer.verified && (
+                              <svg className="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                              </svg>
+                            )}
+                          </div>
+                          <div className="text-xs md:text-sm text-muted-foreground truncate">
+                            {influencer.username}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1 shrink-0">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Badge variant="secondary" className="text-[10px] md:text-xs">
+                            {influencer.matchScore}%
+                          </Badge>
+                        </div>
+                        <div className="text-[10px] md:text-xs text-muted-foreground">
+                          {influencer.followersFormatted || formatNumber(influencer.followers)} • {influencer.engagementFormatted || `${influencer.engagement}%`}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
 
