@@ -29,7 +29,7 @@ export const StatsCard = ({ title, value, change, icon, className }: StatsCardPr
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        {change && (
+        {/* {change && (
           <div className="flex items-center space-x-1 mt-1">
             {change.type === "increase" ? (
               <TrendingUp className="h-3 w-3 text-success" />
@@ -47,7 +47,7 @@ export const StatsCard = ({ title, value, change, icon, className }: StatsCardPr
             </Badge>
             <span className="text-xs text-muted-foreground">from last month</span>
           </div>
-        )}
+        )} */}
       </CardContent>
     </Card>
   );

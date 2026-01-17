@@ -56,11 +56,11 @@ const navigationItems = [
 ];
 
 const secondaryItems = [
-  {
-    title: "Integrations",
-    href: "/integrations",
-    icon: Puzzle,
-  },
+  // {
+  //   title: "Integrations",
+  //   href: "/integrations",
+  //   icon: Puzzle,
+  // },
   {
     title: "Refer and Earn",
     href: "/refer",

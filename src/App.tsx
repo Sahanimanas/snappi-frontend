@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 // 🏠 Public pages
 import { Landing } from "./pages/Landing";
@@ -18,8 +19,8 @@ import { About } from "./pages/About";
 import { FAQ } from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 
-// 🔒 Protected pages
-import { Dashboard } from "./pages/Dashboard";
+// 🔒 Protected pages (User)
+import { Dashboard } from "./pages/Dashboard.js";
 import { SearchInfluencers } from "./pages/SearchInfluencers";
 import { CreateCampaign } from "./pages/CreateCampaign";
 import { Campaigns } from "./pages/Campaigns";
@@ -31,6 +32,14 @@ import { InfluencerTracking } from "./pages/InfluencerTracking";
 import { ShortlistPage } from "./pages/ShortlistPage";
 import { HelpCenter } from "./pages/HelpCenter";
 import { ReferEarn } from "./pages/ReferEarn";
+import { CampaignDetail } from "@/pages/CampaignDetail.js";
+// 🔐 Admin pages
+import AdminLogin from "./pages/admin/AdminLogin.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminInfluencers from "./pages/admin/AdminInfluencers";
+import AdminKeywords from "@/pages/admin/AdminKeywords";
+// import { AdminUsers } from "./pages/admin/AdminUsers";
+// import { AdminCampaigns } from "./pages/admin/AdminCampaigns";
 
 // 📘 Help section pages
 import { GettingStarted } from "./pages/help/GettingStarted";
@@ -40,11 +49,9 @@ import { InfluencerSearch } from "./pages/help/InfluencerSearch";
 import { AccountSettings } from "./pages/help/AccountSettings";
 import { BillingPricing } from "./pages/help/BillingPricing";
 
-// 🔧 Initialize query client
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Store referral code (if any)
   useEffect(() => {
     try {
       const url = new URL(window.location.href);
@@ -71,162 +78,38 @@ const App = () => {
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
 
-              {/* ---------------- PROTECTED ROUTES ---------------- */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/search"
-                element={
-                  <ProtectedRoute>
-                    <SearchInfluencers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/campaigns"
-                element={
-                  <ProtectedRoute>
-                    <Campaigns />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/campaigns/create"
-                element={
-                  <ProtectedRoute>
-                    <CreateCampaign />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/create-campaign"
-                element={
-                  <ProtectedRoute>
-                    <CreateCampaign />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/analytics"
-                element={
-                  <ProtectedRoute>
-                    <Analytics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/influencers"
-                element={
-                  <ProtectedRoute>
-                    <Influencers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/edit-campaign/:id" element={                  <ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
-              <Route
-                path="/integrations"
-                element={
-                  <ProtectedRoute>
-                    <Integrations />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/refer"
-                element={
-                  <ProtectedRoute>
-                    <ReferEarn />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/tracking"
-                element={
-                  <ProtectedRoute>
-                    <InfluencerTracking />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/shortlist"
-                element={
-                  <ProtectedRoute>
-                    <ShortlistPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help"
-                element={
-                  <ProtectedRoute>
-                    <HelpCenter />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/getting-started"
-                element={
-                  <ProtectedRoute>
-                    <GettingStarted />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/campaign-management"
-                element={
-                  <ProtectedRoute>
-                    <CampaignManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/analytics-reporting"
-                element={
-                  <ProtectedRoute>
-                    <AnalyticsReporting />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/influencer-search"
-                element={
-                  <ProtectedRoute>
-                    <InfluencerSearch />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/account-settings"
-                element={
-                  <ProtectedRoute>
-                    <AccountSettings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/help/billing-pricing"
-                element={
-                  <ProtectedRoute>
-                    <BillingPricing />
-                  </ProtectedRoute>
-                }
-              />
+              {/* ---------------- ADMIN ROUTES ---------------- */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+              <Route path="/admin/influencers" element={<AdminProtectedRoute><AdminInfluencers /></AdminProtectedRoute>} />
+              <Route path="/admin/keywords" element={<AdminProtectedRoute><AdminKeywords /></AdminProtectedRoute>} />
+              {/* <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+              <Route path="/admin/campaigns" element={<AdminProtectedRoute><AdminCampaigns /></AdminProtectedRoute>} /> */}
 
-              {/* ---------------- FALLBACK ROUTE ---------------- */}
+              {/* ---------------- USER PROTECTED ROUTES ---------------- */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/search" element={<ProtectedRoute><SearchInfluencers /></ProtectedRoute>} />
+              <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+              <Route path="/campaigns/create" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
+              <Route path="/create-campaign" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
+              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+              <Route path="/influencers" element={<ProtectedRoute><Influencers /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/edit-campaign/:id" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
+              {/* <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} /> */}
+              <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
+              <Route path="/tracking" element={<ProtectedRoute><InfluencerTracking /></ProtectedRoute>} />
+              <Route path="/shortlist" element={<ProtectedRoute><ShortlistPage /></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+              <Route path="/help/getting-started" element={<ProtectedRoute><GettingStarted /></ProtectedRoute>} />
+              <Route path="/help/campaign-management" element={<ProtectedRoute><CampaignManagement /></ProtectedRoute>} />
+              <Route path="/help/analytics-reporting" element={<ProtectedRoute><AnalyticsReporting /></ProtectedRoute>} />
+              <Route path="/help/influencer-search" element={<ProtectedRoute><InfluencerSearch /></ProtectedRoute>} />
+              <Route path="/help/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+              <Route path="/help/billing-pricing" element={<ProtectedRoute><BillingPricing /></ProtectedRoute>} />
+              <Route path="/campaigns/:id" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+              {/* ---------------- FALLBACK ---------------- */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

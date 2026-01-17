@@ -1,836 +1,513 @@
-import { useState, useEffect, useCallback } from "react";
+// pages/SearchInfluencers.tsx
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { influencersAPI, Influencer } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlatformIcon } from "@/components/ui/platform-icon";
-import { Slider } from "@/components/ui/slider";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AddToCampaignDialog } from "@/components/AddToCampaignDialog";
 import {
   Search,
-  Filter,
-  MapPin,
   Users,
-  Plus,
-  Smartphone,
-  Target,
-  BarChart3,
-  Hash,
-  X,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
-  Sparkles
+  ExternalLink,
+  Plus,
+  Filter,
+  Sparkles,
+  MapPin,
+  CheckCircle,
 } from "lucide-react";
+import { influencersAPI, Influencer, Platform, formatNumber } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-const mainCountries = [
-  { value: "usa", label: "🇺🇸 United States" },
-  { value: "uk", label: "🇬🇧 United Kingdom" },
-  { value: "canada", label: "🇨🇦 Canada" },
-  { value: "australia", label: "🇦🇺 Australia" },
-  { value: "germany", label: "🇩🇪 Germany" },
-  { value: "france", label: "🇫🇷 France" },
-];
+// Platform Icon with Link
+const PlatformIconLink = ({ platform }: { platform: Platform }) => {
+  const getIcon = (name: string) => {
+    const iconClass = "h-5 w-5";
+    switch (name?.toLowerCase()) {
+      case "instagram":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+        );
+      case "youtube":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        );
+      case "tiktok":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+          </svg>
+        );
+      case "twitter":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        );
+      case "facebook":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        );
+      case "linkedin":
+        return (
+          <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        );
+      default:
+        return <ExternalLink className={iconClass} />;
+    }
+  };
 
-const otherCountries = [
-  { value: "afghanistan", label: "🇦🇫 Afghanistan" },
-  { value: "albania", label: "🇦🇱 Albania" },
-  { value: "algeria", label: "🇩🇿 Algeria" },
-  { value: "argentina", label: "🇦🇷 Argentina" },
-  { value: "brazil", label: "🇧🇷 Brazil" },
-  { value: "china", label: "🇨🇳 China" },
-  { value: "india", label: "🇮🇳 India" },
-  { value: "japan", label: "🇯🇵 Japan" },
-  { value: "mexico", label: "🇲🇽 Mexico" },
-  { value: "south-korea", label: "🇰🇷 South Korea" },
-];
+  const getColor = (name: string) => {
+    switch (name?.toLowerCase()) {
+      case "instagram": return "text-pink-500 hover:text-pink-600";
+      case "youtube": return "text-red-500 hover:text-red-600";
+      case "tiktok": return "text-gray-900 hover:text-black dark:text-white";
+      case "twitter": return "text-gray-900 hover:text-black dark:text-white";
+      case "facebook": return "text-blue-600 hover:text-blue-700";
+      case "linkedin": return "text-blue-700 hover:text-blue-800";
+      default: return "text-gray-500 hover:text-gray-600";
+    }
+  };
 
-const platformOptions = [
-  { value: "instagram", label: "Instagram", platform: "instagram" },
-  { value: "tiktok", label: "TikTok", platform: "tiktok" },
-  { value: "youtube", label: "YouTube", platform: "youtube" },
-  { value: "facebook", label: "Facebook", platform: "facebook" },
-  { value: "twitter", label: "X (Twitter)", platform: "twitter" },
-  { value: "linkedin", label: "LinkedIn", platform: "linkedin" },
-  { value: "pinterest", label: "Pinterest", platform: "pinterest" }
-];
+  return (
+    <a
+      href={platform.profileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${getColor(platform.platform)} transition-colors inline-flex items-center`}
+      title={`@${platform.username} on ${platform.platform} (${formatNumber(platform.followers)} followers)`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {getIcon(platform.platform)}
+    </a>
+  );
+};
 
-const nicheOptions = [
-  { value: "all", label: "All niches" },
-  { value: "fashion", label: "Fashion & Beauty" },
-  { value: "tech", label: "Technology" },
-  { value: "wellness", label: "Health & Wellness" },
-  { value: "food", label: "Food & Drink" },
-  { value: "travel", label: "Travel" },
-  { value: "fitness", label: "Fitness" },
-  { value: "lifestyle", label: "Lifestyle" },
-  { value: "parenting", label: "Parenting" },
-  { value: "gaming", label: "Gaming" },
-  { value: "finance", label: "Finance" },
-  { value: "education", label: "Education" },
-  { value: "business", label: "Business" }
-];
+// Influencer Card Component
+const InfluencerCard = ({
+  influencer,
+  onAddToShortlist,
+  onContact,
+}: {
+  influencer: Influencer;
+  onAddToShortlist: (inf: Influencer) => void;
+  onContact: (inf: Influencer) => void;
+}) => {
+  const primaryKeyword = influencer.keywords?.[0];
 
-// Local storage key for shortlist
-const SHORTLIST_KEY = 'snappi_shortlist';
+  return (
+    <Card className="border hover:border-primary/40 hover:shadow-md transition-all">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-6">
+          {/* Avatar + Info */}
+          <div className="flex items-center gap-4 min-w-[280px]">
+            <Avatar className="h-14 w-14 border-2 border-muted">
+              <AvatarImage src={influencer.profileImage} alt={influencer.name} />
+              <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
+                {influencer.name?.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+              {primaryKeyword && (
+                <p className="text-sm text-muted-foreground">
+                  {primaryKeyword.displayName || primaryKeyword.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex-1 flex items-center justify-center gap-8">
+            <div className="text-center">
+              <p className="text-2xl font-bold">
+                {formatNumber(influencer.totalFollowers || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Total Followers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {(influencer.avgEngagement || 0).toFixed(1)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Avg Engagement</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold">
+                {influencer.platformCount || influencer.platforms?.length || 0}
+              </p>
+              <p className="text-xs text-muted-foreground">Platforms</p>
+            </div>
+            <div className="text-center">
+              <Badge 
+                variant="default"
+                className="mb-1 capitalize bg-blue-500 hover:bg-blue-600"
+              >
+                {influencer.status || 'Available'}
+              </Badge>
+              <p className="text-xs text-muted-foreground">Status</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 min-w-[150px]">
+            <Button onClick={() => onAddToShortlist(influencer)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add to Shortlist
+            </Button>
+            <Button variant="outline" onClick={() => onContact(influencer)}>
+              Contact
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const SearchInfluencers = () => {
-  // Search state
+  const { toast } = useToast();
+
+  // View mode: 'search' | 'viewAll' | 'top'
+  const [viewMode, setViewMode] = useState<'search' | 'viewAll' | 'top'>('search');
+
+  // Data state
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [shortlist, setShortlist] = useState<Influencer[]>([]);
 
-  // Filter states - all default to "all" or empty (meaning all)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedNiche, setSelectedNiche] = useState("all");
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [campaignObjective, setCampaignObjective] = useState("both"); // Default to "both"
-  const [keywords, setKeywords] = useState("");
-  const [followerRange, setFollowerRange] = useState([1000, 500000]);
-  const [engagementRange, setEngagementRange] = useState([0, 15.0]);
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  // UI states
-  const [showResults, setShowResults] = useState(false);
-  const [shortlist, setShortlist] = useState<string[]>([]);
-  const [displayLimit, setDisplayLimit] = useState(20);
-  const [mode, setMode] = useState<"none" | "search" | "all" | "recommendations">("none");
-  const [initialLoad, setInitialLoad] = useState(true);
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
 
-  // Load shortlist from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(SHORTLIST_KEY);
-    if (stored) {
-      try {
-        setShortlist(JSON.parse(stored));
-      } catch (e) {
-        console.error('Error loading shortlist:', e);
-      }
-    }
-  }, []);
+  // Campaign Dialog
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [selectedInfluencer, setSelectedInfluencer] = useState<{id: string; name: string} | null>(null);
 
-  // Save shortlist to localStorage
-  useEffect(() => {
-    localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist));
-  }, [shortlist]);
-
-  // Auto-load all influencers on initial mount
-  useEffect(() => {
-    if (initialLoad) {
-      handleViewAll();
-      setInitialLoad(false);
-    }
-  }, [initialLoad]);
-
-  // API call: Search influencers
-  const handleSearch = useCallback(async () => {
+  // Fetch influencers based on view mode
+  const fetchInfluencers = async () => {
     setLoading(true);
-    setError(null);
-    setMode("search");
-    setShowResults(true);
-
-    try {
-      const result = await influencersAPI.search({
-        search: searchQuery || undefined,
-        platforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
-        niche: selectedNiche === "all" ? undefined : selectedNiche,
-        location: selectedLocation === "all" ? undefined : selectedLocation,
-        keywords: keywords || undefined,
-        minFollowers: followerRange[0],
-        maxFollowers: followerRange[1],
-        minEngagement: engagementRange[0],
-        maxEngagement: engagementRange[1],
-        campaignObjective: campaignObjective as 'awareness' | 'sales' | 'both'
+    
+    if (viewMode === 'top') {
+      const result = await influencersAPI.getTopByEngagement({
+        platform: platform || undefined,
+        limit: 20,
+      });
+      if (result.success) {
+        const data = Array.isArray(result.data) ? result.data : [];
+        setInfluencers(data);
+        setTotal(data.length);
+        setTotalPages(1);
+      }
+    } else {
+      const result = await influencersAPI.getAll({
+        page,
+        limit: 20,
+        search: searchTerm || undefined,
+        platform: platform || undefined,
+        country: location || undefined,
+        sortBy: "createdAt",
+        sortOrder: "desc",
       });
 
-      if (result.success && result.data) {
-        setInfluencers(result.data);
-        setTotalCount(result.total || result.count || result.data.length);
-      } else {
-        setError(result.message || 'Failed to search influencers');
-        setInfluencers([]);
+      if (result.success) {
+        const data = Array.isArray(result.data) ? result.data : [];
+        setInfluencers(data);
+        setTotal(result.total || data.length);
+        setTotalPages(result.totalPages || 1);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to search influencers');
-      setInfluencers([]);
-    } finally {
-      setLoading(false);
     }
-  }, [searchQuery, selectedPlatforms, selectedNiche, selectedLocation, keywords, followerRange, engagementRange, campaignObjective]);
+    setLoading(false);
+  };
 
-  // API call: View all influencers
-  const handleViewAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setMode("all");
-    setShowResults(true);
-
-    try {
-      const result = await influencersAPI.getAllNoPagination();
-
-      if (result.success && result.data) {
-        setInfluencers(result.data);
-        setTotalCount(result.count || result.data.length);
-      } else {
-        setError(result.message || 'Failed to load influencers');
-        setInfluencers([]);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load influencers');
-      setInfluencers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // API call: Get AI recommendations
-  const handleGetRecommendations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setMode("recommendations");
-    setShowResults(true);
-
-    try {
-      const result = await influencersAPI.getRecommendations({
-        campaignObjective: campaignObjective,
-        platforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
-        niche: selectedNiche === "all" ? undefined : selectedNiche,
-        limit: 50
-      });
-
-      if (result.success && result.data) {
-        setInfluencers(result.data);
-        setTotalCount(result.count || result.data.length);
-      } else {
-        setError(result.message || 'Failed to get recommendations');
-        setInfluencers([]);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to get recommendations');
-      setInfluencers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [campaignObjective, selectedPlatforms, selectedNiche]);
-
-  // Results to display with pagination
-  const resultsToShow = influencers.slice(0, displayLimit);
-  const hasMoreResults = influencers.length > displayLimit;
-
-  // Reset display limit when results change
   useEffect(() => {
-    setDisplayLimit(20);
-  }, [influencers]);
+    fetchInfluencers();
+  }, [viewMode, page, platform, location]);
 
-  // Add influencer to shortlist
-  const addToShortlist = (influencerId: string) => {
-    if (!shortlist.includes(influencerId)) {
-      setShortlist([...shortlist, influencerId]);
-    }
+  // Handlers
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchInfluencers();
   };
 
-  // Remove influencer from shortlist
-  const removeFromShortlist = (influencerId: string) => {
-    setShortlist(shortlist.filter(id => id !== influencerId));
+  const handleViewModeChange = (mode: 'search' | 'viewAll' | 'top') => {
+    setViewMode(mode);
+    setPage(1);
   };
 
-  // Clear all filters
-  const clearAllFilters = () => {
-    setSearchQuery("");
-    setSelectedPlatforms([]);
-    setSelectedNiche("all");
-    setSelectedLocation("all");
-    setKeywords("");
-    setFollowerRange([1000, 500000]);
-    setEngagementRange([0, 15.0]);
-    setCampaignObjective("both");
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Send email to influencer
-  const handleContactForRates = (influencer: Influencer) => {
-    if (!influencer.email) {
-      alert("No contact email available for this influencer.");
+  const handleAddToShortlist = (influencer: Influencer) => {
+    setSelectedInfluencer({ id: influencer._id, name: influencer.name });
+    setCampaignDialogOpen(true);
+  };
+
+  const handleContact = (influencer: Influencer) => {
+    const email = influencer.email || influencer.contactInfo?.email;
+    if (!email) {
+      toast({
+        title: "No contact info",
+        description: "No email available for this influencer.",
+        variant: "destructive",
+      });
       return;
     }
-
-    const subject = `Collaboration Opportunity with Your Brand`;
-    const body = `Hi ${influencer.name},
-
-I hope you're doing great! We would love to collaborate with you.
-
-Looking forward to hearing from you.
-
-Best regards,
-[Your Name]`;
-
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-      influencer.email
-    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
+    const subject = `Collaboration Opportunity`;
+    const body = `Hi ${influencer.name},\n\nWe would love to collaborate with you.`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, "_blank");
-
-    setTimeout(() => {
-      window.location.href = `mailto:${influencer.email}?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(body)}`;
-    }, 500);
-  };
-
-  const formatFollowerCount = (count: number) => {
-    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
-    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-    return count.toString();
-  };
-
-  // Get active filter count
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (searchQuery) count++;
-    if (selectedPlatforms.length > 0) count++;
-    if (selectedNiche && selectedNiche !== "all") count++;
-    if (selectedLocation && selectedLocation !== "all") count++;
-    if (keywords) count++;
-    if (followerRange[0] !== 1000 || followerRange[1] !== 500000) count++;
-    if (engagementRange[0] !== 0 || engagementRange[1] !== 15.0) count++;
-    return count;
-  };
-
-  // Select/Deselect all platforms
-  const toggleAllPlatforms = () => {
-    if (selectedPlatforms.length === platformOptions.length) {
-      setSelectedPlatforms([]);
-    } else {
-      setSelectedPlatforms(platformOptions.map(p => p.value));
-    }
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 w-full p-4 md:p-6 space-y-8 overflow-y-auto h-[calc(100vh-theme(spacing.16))]">
-          
-          {/* Header Section */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-              <h1 className="text-3xl md:text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold tracking-tight">
-                AI-Powered Influencer Search
-              </h1>
-              <div className="flex">
-                <Badge variant="secondary" className="bg-gradient-primary text-primary-foreground font-medium px-3 py-1 w-fit">
-                  AI
-                </Badge>
-              </div>
-            </div>
-            <p className="text-base md:text-lg text-muted-foreground">
-              Find the perfect influencers for your campaigns across all platforms.
-              {totalCount > 0 && ` ${totalCount} influencers available.`}
-            </p>
-          </div>
-
+        <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto">
           {/* Search Filters Card */}
-          <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2 text-lg md:text-xl">
-                  <Filter className="h-5 w-5" />
-                  <span>Search Filters</span>
-                  {getActiveFilterCount() > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {getActiveFilterCount()} active
-                    </Badge>
-                  )}
-                </CardTitle>
-                {getActiveFilterCount() > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAllFilters}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Clear all
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Campaign Objective */}
-              <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <h3 className="font-medium text-primary text-sm md:text-base">Campaign Objective (optional):</h3>
-                <RadioGroup value={campaignObjective} onValueChange={setCampaignObjective} className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="awareness" id="awareness" />
-                    <Label htmlFor="awareness">Boost brand awareness</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sales" id="sales" />
-                    <Label htmlFor="sales">Increase sales</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="both" id="both" />
-                    <Label htmlFor="both">Increase awareness and sales</Label>
-                  </div>
-                </RadioGroup>
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Search Filters</h2>
               </div>
 
-              {/* Search Bar */}
-              <div className="relative mb-8">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-5 text-muted-foreground z-10" />
-                <Input
-                  placeholder="Search by name, category, niche, or bio..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-12 min-h-[52px] text-base shadow-lg border bg-background/80 backdrop-blur-sm focus:shadow-xl transition-all duration-300 rounded-xl w-full"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                )}
+              {/* Search Input */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, username, bio..."
+                    className="pl-10 h-11"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
+                </div>
               </div>
 
-              {/* Filter Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
-                {/* Platforms */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2 md:mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Smartphone className="h-5 w-5 text-primary" />
-                      </div>
-                      <label className="text-base font-semibold text-foreground">Platforms</label>
+              {/* Filter Dropdowns */}
+              <div className="grid grid-cols-4 gap-6 mb-6">
+                {/* Platform */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12" y2="18"/>
+                      </svg>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleAllPlatforms}
-                      className="h-6 px-2 text-xs"
-                    >
-                      {selectedPlatforms.length === platformOptions.length ? 'Clear All' : 'Select All'}
-                    </Button>
+                    <span className="text-sm font-medium">Platform</span>
                   </div>
-                  <div className="space-y-3 p-4 border rounded-xl bg-background/50 backdrop-blur-sm max-h-64 overflow-y-auto shadow-sm">
-                    {platformOptions.map((platform) => (
-                      <div key={platform.value} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <Checkbox
-                          id={platform.value}
-                          checked={selectedPlatforms.includes(platform.value)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedPlatforms([...selectedPlatforms, platform.value]);
-                            } else {
-                              setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform.value));
-                            }
-                          }}
-                        />
-                        <label htmlFor={platform.value} className="flex items-center space-x-3 cursor-pointer flex-1">
-                          <PlatformIcon platform={platform.platform} />
-                          <span className="text-sm font-medium">{platform.label}</span>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedPlatforms.length === 0 
-                      ? 'All platforms selected' 
-                      : `${selectedPlatforms.length} platform${selectedPlatforms.length > 1 ? 's' : ''} selected`}
-                  </p>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={platform}
+                    onChange={(e) => { setPlatform(e.target.value); setPage(1); }}
+                  >
+                    <option value="">All Platforms</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="twitter">Twitter/X</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                  </select>
                 </div>
 
-                {/* Niche */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2 md:mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Target className="h-5 w-5 text-primary" />
-                      </div>
-                      <label className="text-base font-semibold text-foreground">Niche</label>
+                {/* Category */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                      </svg>
                     </div>
-                    {selectedNiche && selectedNiche !== "all" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedNiche("all")}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
+                    <span className="text-sm font-medium">Category</span>
                   </div>
-                  <Select value={selectedNiche} onValueChange={setSelectedNiche}>
-                    <SelectTrigger className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm w-full">
-                      <SelectValue placeholder="All niches" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background/95 backdrop-blur-sm z-50 max-h-60 rounded-xl border shadow-lg">
-                      {nicheOptions.map((niche) => (
-                        <SelectItem key={niche.value} value={niche.value}>
-                          {niche.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={category}
+                    onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+                  >
+                    <option value="">All Categories</option>
+                    <option value="tech">Technology</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="fitness">Fitness</option>
+                    <option value="food">Food</option>
+                    <option value="travel">Travel</option>
+                  </select>
                 </div>
 
                 {/* Location */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2 md:mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <MapPin className="h-5 w-5 text-primary" />
-                      </div>
-                      <label className="text-base font-semibold text-foreground">Location</label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                      <MapPin className="h-4 w-4" />
                     </div>
-                    {selectedLocation && selectedLocation !== "all" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedLocation("all")}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
+                    <span className="text-sm font-medium">Location</span>
                   </div>
-                  <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm w-full">
-                      <SelectValue placeholder="Any location" />
-                    </SelectTrigger>
-                    <SelectContent align="end" side="bottom" className="max-h-60 bg-background/95 backdrop-blur-sm z-50 rounded-xl border shadow-lg">
-                      <SelectItem value="all">Any location</SelectItem>
-                      {mainCountries.map((country) => (
-                        <SelectItem key={country.value} value={country.value}>
-                          {country.label}
-                        </SelectItem>
-                      ))}
-                      <div className="border-t my-1"></div>
-                      {otherCountries.map((country) => (
-                        <SelectItem key={country.value} value={country.value}>
-                          {country.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={location}
+                    onChange={(e) => { setLocation(e.target.value); setPage(1); }}
+                  >
+                    <option value="">Any Location</option>
+                    <option value="USA">USA</option>
+                    <option value="UK">UK</option>
+                    <option value="India">India</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                  </select>
                 </div>
 
-                {/* Engagement Range */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 mb-2 md:mb-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <BarChart3 className="h-5 w-5 text-primary" />
+                {/* Shortlist */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                      <Users className="h-4 w-4" />
                     </div>
-                    <label className="text-base font-semibold text-foreground">Engagement Range</label>
+                    <span className="text-sm font-medium">Shortlist</span>
                   </div>
-                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
-                    <Slider
-                      value={engagementRange}
-                      onValueChange={setEngagementRange}
-                      max={15}
-                      min={0}
-                      step={0.5}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground mt-3">
-                      <span>0%</span>
-                      <span className="font-medium text-primary">{engagementRange[0]}% - {engagementRange[1]}%</span>
-                      <span>15%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Follower Count Range */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 mb-2 md:mb-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <label className="text-base font-semibold text-foreground">Follower Count Range</label>
-                  </div>
-                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
-                    <Slider
-                      value={followerRange}
-                      onValueChange={setFollowerRange}
-                      max={500000}
-                      min={1000}
-                      step={5000}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground mt-3">
-                      <span>1K</span>
-                      <span className="font-medium text-primary">
-                        {formatFollowerCount(followerRange[0])} - {formatFollowerCount(followerRange[1])}
-                      </span>
-                      <span>500K</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Keywords/Tags */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2 md:mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Hash className="h-5 w-5 text-primary" />
-                      </div>
-                      <label className="text-base font-semibold text-foreground">Keywords/Tags</label>
-                    </div>
-                    {keywords && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setKeywords("")}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                  <Input
-                    placeholder="e.g., sustainable, vegan, tech (comma-separated)"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm w-full"
-                  />
-                  {keywords && (
-                    <p className="text-xs text-muted-foreground">
-                      Searching for: {keywords.split(',').map(k => k.trim()).filter(k => k).join(', ')}
-                    </p>
-                  )}
+                  <Button variant="outline" className="w-full h-10 justify-start">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    View Shortlist ({shortlist.length})
+                  </Button>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col md:flex-row gap-4 pt-4">
-                <Button
-                  className="w-full md:w-auto flex-1 md:flex-none"
+              <div className="flex gap-3">
+                <Button 
                   onClick={handleSearch}
-                  disabled={loading}
+                  className={viewMode === 'search' ? '' : 'bg-primary'}
                 >
-                  {loading && mode === "search" ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4 mr-2" />
-                  )}
-                  Search Influencers
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full md:w-auto"
-                  onClick={handleViewAll}
-                  disabled={loading}
+                <Button 
+                  variant={viewMode === 'viewAll' ? 'default' : 'outline'}
+                  onClick={() => handleViewModeChange('viewAll')}
                 >
-                  {loading && mode === "all" ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Users className="h-4 w-4 mr-2" />
-                  )}
-                  View All Influencers
+                  <Users className="h-4 w-4 mr-2" />
+                  View All
                 </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full md:w-auto"
-                  onClick={handleGetRecommendations}
-                  disabled={loading}
+                {/* <Button 
+                  variant={viewMode === 'top' ? 'default' : 'outline'}
+                  onClick={() => handleViewModeChange('top')}
                 >
-                  {loading && mode === "recommendations" ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
-                  )}
-                  AI Recommendations
-                </Button>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Top Performers
+                </Button> */}
               </div>
             </CardContent>
           </Card>
 
-          {/* Results */}
-          {showResults && (
-            <div className="space-y-4 pb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    {mode === "recommendations" ? "AI Recommendations" : "Search Results"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Showing {resultsToShow.length} of {influencers.length} influencers
-                    {mode === "search" && getActiveFilterCount() > 0 && 
-                      ` (${getActiveFilterCount()} filter${getActiveFilterCount() > 1 ? 's' : ''} applied)`
-                    }
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/shortlist">
-                      <Plus className="h-4 w-4 mr-2" />
-                      View Shortlist ({shortlist.length})
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+          {/* Search Results */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Search Results</h2>
+              <p className="text-sm text-muted-foreground">
+                Showing {influencers.length} of {total} influencers
+              </p>
+            </div>
 
-              <div className="grid gap-6">
-                {loading ? (
-                  <div className="text-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                    <p className="text-muted-foreground">Loading influencers...</p>
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8">
-                    <p className="text-destructive">Error: {error}</p>
-                    <Button variant="outline" className="mt-4" onClick={handleViewAll}>
-                      Try Again
-                    </Button>
-                  </div>
-                ) : resultsToShow.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="max-w-md mx-auto space-y-4">
-                      <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                        <Search className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-semibold">No influencers found</h3>
-                      <p className="text-muted-foreground">
-                        Try adjusting your filters or search criteria to find more results.
-                      </p>
-                      {getActiveFilterCount() > 0 && (
-                        <Button variant="outline" onClick={clearAllFilters}>
-                          Clear all filters
-                        </Button>
-                      )}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : influencers.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-16 text-center">
+                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-lg font-medium">No influencers found</p>
+                  <p className="text-muted-foreground">Try different search terms or filters</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {influencers.map((influencer) => (
+                  <InfluencerCard
+                    key={influencer._id}
+                    influencer={influencer}
+                    onAddToShortlist={handleAddToShortlist}
+                    onContact={handleContact}
+                  />
+                ))}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t pt-6 mt-6">
+                    <p className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page <= 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={page >= totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
                     </div>
                   </div>
-                ) : (
-                  resultsToShow.map((influencer) => (
-                    <Card key={influencer._id} className="shadow-card hover:shadow-elegant transition-shadow duration-300">
-                      <CardContent className="p-4 md:p-6">
-                        <div className="flex flex-col lg:flex-row gap-6">
-                          {/* Profile Info */}
-                          <div className="flex items-start space-x-4 min-w-[250px]">
-                            <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-                              {influencer.name.split(' ').map((n: string) => n[0]).join('')}
-                            </div>
-                            <div className="space-y-2">
-                              <div>
-                                <h3 className="text-lg font-semibold">{influencer.name}</h3>
-                                {influencer.email && (
-                                  <p className="text-sm text-muted-foreground break-all">{influencer.email}</p>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 text-sm">
-                                <div className="flex items-center space-x-1">
-                                  <PlatformIcon platform={influencer.platform} />
-                                  <span className="capitalize">{influencer.platform}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{influencer.country || 'Location not specified'}</span>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {influencer.categories && influencer.categories.slice(0, 2).map((cat: string, idx: number) => (
-                                  <Badge key={idx} variant="secondary">{cat}</Badge>
-                                ))}
-                                {influencer.niche && influencer.niche.slice(0, 2).map((n: string, idx: number) => (
-                                  <Badge key={idx} variant="outline">{n}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Stats */}
-                          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center">
-                              <div className="text-lg font-bold">
-                                {formatFollowerCount(influencer.followers)}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Followers</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-success">
-                                {influencer.engagement.toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-muted-foreground">Engagement</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-primary">
-                                {influencer.matchScore ? influencer.matchScore + '%' : 'N/A'}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {mode === "recommendations" ? "Rec. Score" : "Match Score"}
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <button
-                                onClick={() => handleContactForRates(influencer)}
-                                className="text-sm font-bold text-blue-600 hover:text-blue-800 underline"
-                              >
-                                Contact for rates
-                              </button>
-                              <div className="text-xs text-muted-foreground">Per Post</div>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 w-full lg:w-auto">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() =>
-                                shortlist.includes(influencer._id)
-                                  ? removeFromShortlist(influencer._id)
-                                  : addToShortlist(influencer._id)
-                              }
-                              variant={shortlist.includes(influencer._id) ? "secondary" : "default"}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              {shortlist.includes(influencer._id) ? "In Shortlist" : "Add to Shortlist"}
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => window.open(influencer.profileUrl || '#', "_blank", "noopener,noreferrer")}
-                            >
-                              View Profile
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
                 )}
               </div>
-
-              {/* Load More */}
-              {hasMoreResults && !loading && (
-                <div className="text-center pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setDisplayLimit(prev => prev + 20)}
-                  >
-                    Load More Results ({influencers.length - displayLimit} remaining)
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </main>
       </div>
+
+      {/* Add to Campaign Dialog */}
+      {selectedInfluencer && (
+        <AddToCampaignDialog
+          open={campaignDialogOpen}
+          onOpenChange={setCampaignDialogOpen}
+          influencerId={selectedInfluencer.id}
+          influencerName={selectedInfluencer.name}
+          onSuccess={(campaignId, campaignName) => {
+            toast({
+              title: "Success!",
+              description: `Added to "${campaignName}"`,
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
-
-export default SearchInfluencers;
