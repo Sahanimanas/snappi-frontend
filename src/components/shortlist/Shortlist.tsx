@@ -35,7 +35,7 @@ export const Shortlist = () => {
   }, []);
 
   // Get shortlisted influencers from the influencers list
-  const shortlistedInfluencers = influencers.filter(inf => 
+  const shortlistedInfluencers = influencers.filter(inf =>
     shortlistedIds.includes(inf.id)
   );
 
@@ -213,7 +213,7 @@ Best regards,
                         <div>
                           <p className="text-muted-foreground">Followers</p>
                           <p className="font-medium">
-                            {influencer.follower_count 
+                            {influencer.follower_count
                               ? (influencer.follower_count / 1000).toFixed(1) + 'K'
                               : 'N/A'
                             }
