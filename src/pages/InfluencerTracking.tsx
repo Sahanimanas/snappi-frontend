@@ -30,8 +30,35 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { campaignsAPI, Campaign, formatNumber } from "@/lib/api";
-import { trackingLinkAPI, TrackingStats } from "@/lib/trackingLinkApi";
+import { trackingLinkAPI } from "@/lib/trackingLinkApi";
 import { CampaignInfluencersModal } from "@/components/tracking/CampaignInfluencersModal";
+
+// Define TrackingStats type
+interface TrackingStats {
+  overview: {
+    totalLinks: number;
+    activeLinks: number;
+    totalClicks: number;
+    uniqueClicks: number;
+    totalPosts: number;
+    totalViews: number;
+    totalLikes: number;
+    totalComments: number;
+    totalShares: number;
+    totalReach: number;
+  };
+  postsByStatus: Array<{
+    _id: string;
+    count: number;
+  }>;
+  topCampaigns: Array<{
+    _id: string;
+    campaignName: string;
+    linkCount: number;
+    postCount: number;
+    totalClicks: number;
+  }>;
+}
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
@@ -76,10 +103,10 @@ export const InfluencerTracking = () => {
       });
     }
 
-    // Fetch tracking stats
-    const statsResult = await trackingLinkAPI.getStats();
-    if (statsResult.success) {
-      setStats(statsResult.data);
+    // Fetch overall tracking stats
+    const statsResult = await trackingLinkAPI.getOverallStats();
+    if (statsResult.success && statsResult.data) {
+      setStats(statsResult.data as TrackingStats);
     }
 
     setLoading(false);
@@ -126,13 +153,13 @@ export const InfluencerTracking = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Active Links</p>
                   <p className="text-2xl font-bold">
-                    {stats?.overview.activeLinks || 0}
+                    {stats?.overview?.activeLinks || 0}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* <Card className="shadow-sm">
+            <Card className="shadow-sm">
               <CardContent className="p-5 flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-green-500/10">
                   <MousePointerClick className="h-6 w-6 text-green-600" />
@@ -140,11 +167,11 @@ export const InfluencerTracking = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Clicks</p>
                   <p className="text-2xl font-bold">
-                    {formatNumber(stats?.overview.totalClicks || 0)}
+                    {formatNumber(stats?.overview?.totalClicks || 0)}
                   </p>
                 </div>
               </CardContent>
-            </Card> */}
+            </Card>
 
             <Card className="shadow-sm">
               <CardContent className="p-5 flex items-center gap-4">
@@ -154,7 +181,7 @@ export const InfluencerTracking = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Posts</p>
                   <p className="text-2xl font-bold">
-                    {stats?.overview.totalPosts || 0}
+                    {stats?.overview?.totalPosts || 0}
                   </p>
                 </div>
               </CardContent>
@@ -168,7 +195,7 @@ export const InfluencerTracking = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Reach</p>
                   <p className="text-2xl font-bold">
-                    {formatNumber(stats?.overview.totalReach || 0)}
+                    {formatNumber(stats?.overview?.totalReach || 0)}
                   </p>
                 </div>
               </CardContent>
@@ -332,7 +359,7 @@ export const InfluencerTracking = () => {
             <TabsContent value="overview" className="space-y-6 mt-4">
               {/* Performance Summary Cards */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* <Card className="shadow-sm">
+                <Card className="shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Eye className="h-5 w-5 text-primary" />
@@ -346,7 +373,7 @@ export const InfluencerTracking = () => {
                           Total Views
                         </span>
                         <span className="font-semibold">
-                          {formatNumber(stats?.overview.totalViews || 0)}
+                          {formatNumber(stats?.overview?.totalViews || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -354,7 +381,7 @@ export const InfluencerTracking = () => {
                           Total Likes
                         </span>
                         <span className="font-semibold">
-                          {formatNumber(stats?.overview.totalLikes || 0)}
+                          {formatNumber(stats?.overview?.totalLikes || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -362,13 +389,14 @@ export const InfluencerTracking = () => {
                           Total Comments
                         </span>
                         <span className="font-semibold">
-                          {formatNumber(stats?.overview.totalComments || 0)}
+                          {formatNumber(stats?.overview?.totalComments || 0)}
                         </span>
                       </div>
                     </div>
                   </CardContent>
-                </Card> */}
-<Card className="shadow-sm">
+                </Card>
+
+                <Card className="shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <BarChart3 className="h-5 w-5 text-green-600" />
@@ -396,12 +424,13 @@ export const InfluencerTracking = () => {
                           Total Links
                         </span>
                         <span className="font-semibold">
-                          {stats?.overview.totalLinks || 0}
+                          {stats?.overview?.totalLinks || 0}
                         </span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -430,8 +459,6 @@ export const InfluencerTracking = () => {
                     </div>
                   </CardContent>
                 </Card>
-
-                
               </div>
 
               {/* Top Campaigns */}
@@ -452,10 +479,10 @@ export const InfluencerTracking = () => {
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-sm font-bold">
-                            {item.campaignName?.charAt(0).toUpperCase()}
+                            {item.campaignName?.charAt(0).toUpperCase() || '?'}
                           </div>
                           <div>
-                            <p className="font-medium">{item.campaignName}</p>
+                            <p className="font-medium">{item.campaignName || 'Unknown Campaign'}</p>
                             <p className="text-sm text-muted-foreground">
                               {item.linkCount} links • {item.postCount} posts
                             </p>

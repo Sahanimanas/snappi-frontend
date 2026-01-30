@@ -39,7 +39,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { campaignsAPI, Campaign, Influencer, formatNumber } from "@/lib/api";
-import { trackingLinkAPI, TrackingLink } from "@/lib/trackingLinkApi";
+import { trackingLinkAPI } from "@/lib/trackingLinkApi";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -47,6 +47,37 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// Define TrackingLink type locally if not exported from trackingLinkApi
+interface TrackingLink {
+  _id: string;
+  trackingCode: string;
+  trackingUrl: string;
+  destinationUrl: string;
+  status: string;
+  campaign: {
+    _id: string;
+    name: string;
+    status: string;
+  };
+  influencer: {
+    _id: string;
+    name: string;
+    email?: string;
+    profileImage?: string;
+  };
+  submittedPosts: Array<{
+    _id: string;
+    platform: string;
+    postType: string;
+    postUrl: string;
+    status: string;
+  }>;
+  clickStats?: {
+    totalClicks: number;
+    uniqueClicks: number;
+  };
+}
 
 export const CampaignDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -105,9 +136,6 @@ export const CampaignDetail = () => {
   };
 
   const handleGenerateLink = async (influencer: any) => {
-    // console.log(localStorage.getItem('snappi_user_token'));
-    console.log('User Token:', localStorage.getItem('snappi_user_token'));
-   console.log('Admin Token:', localStorage.getItem('adminToken'));
     // If link already exists, show it
     if (trackingLinks[influencer._id]) {
       setSelectedInfluencer(influencer);
@@ -119,7 +147,13 @@ export const CampaignDetail = () => {
     // Generate new link
     setGeneratingFor(influencer._id);
 
-    const result = await trackingLinkAPI.generate(id!, influencer._id);
+    // Use the updated API signature
+    const result = await trackingLinkAPI.generate({
+      campaignId: id!,
+      influencerId: influencer._id,
+      // Optionally add destinationUrl if campaign has a target URL
+      destinationUrl: campaign?.targetUrl || '',
+    });
 
     if (result.success && result.data) {
       const newLink = result.data as TrackingLink;
@@ -205,9 +239,9 @@ export const CampaignDetail = () => {
   };
 
   const getAvgEngagement = (influencer: any) => {
-    if (influencer.avgEngagement) return influencer.avgEngagement;
+    if (influencer.avgEngagement) return Number(influencer.avgEngagement);
     if (influencer.platforms && influencer.platforms.length > 0) {
-      const total = influencer.platforms.reduce((sum: number, p: any) => sum + (p.engagement || 0), 0);
+      const total = influencer.platforms.reduce((sum: number, p: any) => sum + (Number(p.engagement) || 0), 0);
       return total / influencer.platforms.length;
     }
     return 0;
@@ -364,6 +398,21 @@ export const CampaignDetail = () => {
                         label: "Reach",
                         value: formatNumber(campaign.performance?.totalReach || 0),
                         icon: Eye,
+                      },
+                      {
+                        label: "Clicks",
+                        value: formatNumber(Object.values(trackingLinks).reduce((sum, link) => sum + (link.clickStats?.totalClicks || 0), 0)),
+                        icon: MousePointerClick,
+                      },
+                      {
+                        label: "Posts",
+                        value: Object.values(trackingLinks).reduce((sum, link) => sum + (link.submittedPosts?.length || 0), 0),
+                        icon: Target,
+                      },
+                      {
+                        label: "Links",
+                        value: Object.keys(trackingLinks).length,
+                        icon: LinkIcon,
                       },
                     ].map((m) => (
                       <div key={m.label} className="text-center p-3 bg-muted/50 rounded-lg">
