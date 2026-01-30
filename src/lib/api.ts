@@ -3,7 +3,7 @@
  * Handles all communication with the Snappi backend API
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL 
 
 // Token management - User
 const USER_TOKEN_KEY = 'snappi_user_token';
@@ -45,7 +45,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
   useAdminToken: boolean = false
-): Promise<{ success: boolean; data?: T; message?: string; token?: string; error?: string; total?: number; count?: number; totalPages?: number; currentPage?: number; pagination?: any }> {
+): Promise<{ success: boolean; data?: T; message?: string; token?: string; error?: string; total?: number; count?: number; totalPages?: number; currentPage?: number; pagination?: any; campaign?: any }> {
   const token = useAdminToken ? getAdminToken() : getToken();
 
   const headers: HeadersInit = {
@@ -155,6 +155,23 @@ export interface Influencer {
   platformCount?: number;
   createdAt: string;
   updatedAt: string;
+  // Collaborating influencer fields
+  campaigns?: CampaignCollaboration[];
+  totalCampaigns?: number;
+  activeCampaigns?: number;
+  collaborationStatus?: string;
+}
+
+export interface CampaignCollaboration {
+  _id: string;
+  name: string;
+  status: string;
+  collaborationStatus?: string;
+  compensation?: { amount: number; type: string };
+  startDate?: string;
+  endDate?: string;
+  hasTrackingLink?: boolean;
+  deliverablesCount?: number;
 }
 
 export interface Keyword {
@@ -354,6 +371,21 @@ export const influencersAPI = {
     return apiRequest<Influencer[]>(`/influencers/top/engagement?${query}`, { method: 'GET' });
   },
 
+  // NEW: Get collaborating influencers (assigned to user's campaigns)
+  getCollaborating: async (params?: { search?: string; page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    const queryString = queryParams.toString();
+    return apiRequest<Influencer[]>(`/influencers/collaborating${queryString ? `?${queryString}` : ''}`, { method: 'GET' });
+  },
+
+  // NEW: Get influencers for a specific campaign
+  getByCampaign: async (campaignId: string) =>
+    apiRequest<Influencer[]>(`/influencers/campaign/${campaignId}`, { method: 'GET' }),
+
   // Admin only
   create: async (data: Partial<Influencer> & { keywordIds?: string[] }) => apiRequest<Influencer>('/influencers', { method: 'POST', body: JSON.stringify(data) }, true),
 
@@ -407,6 +439,9 @@ export const dashboardAPI = {
   getTopInfluencers: async (limit = 5, sortBy = 'engagement') => apiRequest<any>(`/dashboard/influencers/top?limit=${limit}&sortBy=${sortBy}`, { method: 'GET' }),
   getAnalytics: async (period = '30days') => apiRequest<any>(`/dashboard/analytics?period=${period}`, { method: 'GET' }),
 };
+
+
+
 
 // ==================== HELPERS ====================
 

@@ -1,301 +1,495 @@
-import { useState } from "react";
+// pages/InfluencerTracking.tsx
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Copy,
+import { PlatformIcon } from "@/components/ui/platform-icon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Search,
   Link as LinkIcon,
   BarChart3,
   Users,
   TrendingUp,
-  ExternalLink,
-  Share2,
   Eye,
+  MousePointerClick,
   Calendar,
-  MapPin
+  ChevronRight,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { campaignsAPI, Campaign, formatNumber } from "@/lib/api";
+import { trackingLinkAPI, TrackingStats } from "@/lib/trackingLinkApi";
+import { CampaignInfluencersModal } from "@/components/tracking/CampaignInfluencersModal";
 
-interface Influencer {
-  id: number;
-  name: string;
-  handle: string;
-  platform: string;
-  followers: string;
-  engagement: string;
-  trackingLink?: string;
-}
-
-const mockInfluencers: Influencer[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    handle: "@sarahjstyle",
-    platform: "Instagram",
-    followers: "24.5K",
-    engagement: "6.2%",
-    trackingLink: "https://track.snappi.com/campaign/summer-fashion/sarah-johnson"
-  },
-  {
-    id: 2,
-    name: "Mike Chen", 
-    handle: "@techreviewmike",
-    platform: "YouTube",
-    followers: "18.3K",
-    engagement: "8.1%",
-    trackingLink: "https://track.snappi.com/campaign/tech-review/mike-chen"
-  },
-  {
-    id: 3,
-    name: "Emma Wellness",
-    handle: "@emmawellness", 
-    platform: "TikTok",
-    followers: "32.1K",
-    engagement: "7.4%",
-    trackingLink: "https://track.snappi.com/campaign/wellness/emma-wellness"
+const getStatusColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "active":
+      return "default";
+    case "completed":
+      return "secondary";
+    case "paused":
+      return "outline";
+    case "draft":
+      return "outline";
+    default:
+      return "outline";
   }
-];
+};
 
 export const InfluencerTracking = () => {
-  const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [stats, setStats] = useState<TrackingStats | null>(null);
   const { toast } = useToast();
 
-  const generateTrackingLink = (influencer: Influencer) => {
-    const baseUrl = "https://track.snappi.com";
-    const campaignSlug = "current-campaign"; // This would come from actual campaign data
-    const influencerSlug = influencer.handle.replace("@", "").toLowerCase();
-    return `${baseUrl}/campaign/${campaignSlug}/${influencerSlug}`;
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    
+    // Fetch campaigns
+    const campaignsResult = await campaignsAPI.getAll();
+    if (campaignsResult.success) {
+      setCampaigns(Array.isArray(campaignsResult.data) ? campaignsResult.data : []);
+    } else {
+      toast({
+        title: "Error",
+        description: campaignsResult.message || "Failed to load campaigns",
+        variant: "destructive",
+      });
+    }
+
+    // Fetch tracking stats
+    const statsResult = await trackingLinkAPI.getStats();
+    if (statsResult.success) {
+      setStats(statsResult.data);
+    }
+
+    setLoading(false);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Tracking link copied to clipboard",
-    });
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    const matchesSearch =
+      campaign.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" ||
+      campaign.status?.toLowerCase() === statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
+
+  const getInfluencerCount = (campaign: Campaign) => {
+    return campaign.influencers?.length || campaign.influencerCount || 0;
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        
-        <main className="flex-1 p-6 space-y-6">
+
+        <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto h-[calc(100vh-theme(spacing.16))]">
+          {/* Header */}
           <div>
-            <h1 className="text-3xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Influencer Performance Tracking</h1>
-            <p className="text-muted-foreground">Generate and manage tracking links for your influencer campaigns</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text">
+              Performance Tracking
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Generate tracking links and monitor influencer campaign performance
+            </p>
           </div>
 
-          <Tabs defaultValue="active" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="active">Active Campaigns</TabsTrigger>
-              <TabsTrigger value="performance">Performance Overview</TabsTrigger>
-              <TabsTrigger value="links">Manage Links</TabsTrigger>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="shadow-sm">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <LinkIcon className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Links</p>
+                  <p className="text-2xl font-bold">
+                    {stats?.overview.activeLinks || 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* <Card className="shadow-sm">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-green-500/10">
+                  <MousePointerClick className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Clicks</p>
+                  <p className="text-2xl font-bold">
+                    {formatNumber(stats?.overview.totalClicks || 0)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card> */}
+
+            <Card className="shadow-sm">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-500/10">
+                  <FileText className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Posts</p>
+                  <p className="text-2xl font-bold">
+                    {stats?.overview.totalPosts || 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-purple-500/10">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Reach</p>
+                  <p className="text-2xl font-bold">
+                    {formatNumber(stats?.overview.totalReach || 0)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search campaigns..."
+                className="pl-11 h-11 text-base"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px] h-11">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Campaigns List */}
+          <Tabs defaultValue="campaigns" className="space-y-4">
+            <TabsList className="h-11">
+              <TabsTrigger value="campaigns" className="text-sm px-5">
+                Campaigns
+              </TabsTrigger>
+              <TabsTrigger value="overview" className="text-sm px-5">
+                Performance Overview
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="active" className="space-y-6">
-              <div className="grid gap-4">
-                {mockInfluencers.map((influencer) => (
-                  <Card key={influencer.id} className="shadow-card">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="h-12 w-12 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-                            {influencer.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{influencer.name}</h3>
-                            <p className="text-sm text-muted-foreground">{influencer.handle} • {influencer.platform}</p>
-                            <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
-                              <span>{influencer.followers} followers</span>
-                              <span>{influencer.engagement} engagement</span>
+            <TabsContent value="campaigns" className="space-y-3 mt-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-3 text-muted-foreground">Loading campaigns...</span>
+                </div>
+              ) : filteredCampaigns.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-40" />
+                  <p className="text-lg">No campaigns found</p>
+                  {searchQuery || statusFilter !== "all" ? (
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                filteredCampaigns.map((campaign) => (
+                  <Card
+                    key={campaign._id}
+                    className="border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group"
+                    onClick={() => setSelectedCampaign(campaign)}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between gap-6">
+                        {/* Left: Campaign Info */}
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
+                                {campaign.name}
+                              </h3>
+                              <Badge
+                                variant={getStatusColor(campaign.status)}
+                                className="text-xs px-2.5 py-0.5 capitalize"
+                              >
+                                {campaign.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              {campaign.targetPlatforms?.slice(0, 4).map((p: string) => (
+                                <PlatformIcon
+                                  key={p}
+                                  platform={p}
+                                  className="h-4 w-4 opacity-70"
+                                />
+                              ))}
+                              {(campaign.targetPlatforms?.length || 0) > 4 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{campaign.targetPlatforms!.length - 4}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedInfluencer(influencer)}
-                          >
+
+                        {/* Center: Stats */}
+                        <div className="hidden md:flex items-center gap-8">
+                          <div className="text-center min-w-[80px]">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Influencers
+                            </p>
+                            <p className="font-semibold text-base flex items-center justify-center gap-1">
+                              <Users className="h-4 w-4 text-primary" />
+                              {getInfluencerCount(campaign)}
+                            </p>
+                          </div>
+                          <div className="text-center min-w-[80px]">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Budget
+                            </p>
+                            <p className="font-semibold text-base">
+                              ${campaign.budget?.total?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                          <div className="text-center min-w-[100px]">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Duration
+                            </p>
+                            <p className="font-semibold text-sm">
+                              {campaign.startDate
+                                ? new Date(campaign.startDate).toLocaleDateString(
+                                    "en-US",
+                                    { month: "short", day: "numeric" }
+                                  )
+                                : "—"}
+                              {" - "}
+                              {campaign.endDate
+                                ? new Date(campaign.endDate).toLocaleDateString(
+                                    "en-US",
+                                    { month: "short", day: "numeric" }
+                                  )
+                                : "—"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right: Action */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button variant="outline" size="default" className="h-10">
                             <LinkIcon className="h-4 w-4 mr-2" />
-                            Generate Link
+                            Manage Links
                           </Button>
-                          {influencer.trackingLink && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => copyToClipboard(influencer.trackingLink!)}
-                            >
-                              <Copy className="h-4 w-4 mr-2" />
-                              Copy Link
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm">
-                            <BarChart3 className="h-4 w-4" />
-                          </Button>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </div>
-                      
-                      {influencer.trackingLink && (
-                        <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="text-xs text-muted-foreground mb-1">Tracking Link:</p>
-                              <p className="text-sm font-mono break-all">{influencer.trackingLink}</p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(influencer.trackingLink, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                ))
+              )}
             </TabsContent>
 
-            <TabsContent value="performance" className="space-y-6">
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card className="shadow-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Eye className="h-4 w-4 text-primary" />
+            <TabsContent value="overview" className="space-y-6 mt-4">
+              {/* Performance Summary Cards */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-primary" />
+                      Engagement Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Total Views
+                        </span>
+                        <span className="font-semibold">
+                          {formatNumber(stats?.overview.totalViews || 0)}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Clicks</p>
-                        <p className="text-2xl font-bold">1,247</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Total Likes
+                        </span>
+                        <span className="font-semibold">
+                          {formatNumber(stats?.overview.totalLikes || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Total Comments
+                        </span>
+                        <span className="font-semibold">
+                          {formatNumber(stats?.overview.totalComments || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card> */}
+<Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-green-600" />
+                      Quick Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Total Campaigns
+                        </span>
+                        <span className="font-semibold">{campaigns.length}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Active Campaigns
+                        </span>
+                        <span className="font-semibold text-green-600">
+                          {campaigns.filter((c) => c.status === "active").length}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Total Links
+                        </span>
+                        <span className="font-semibold">
+                          {stats?.overview.totalLinks || 0}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      Posts by Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {stats?.postsByStatus?.map((item) => (
+                        <div
+                          key={item._id}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-sm text-muted-foreground capitalize">
+                            {item._id || "Unknown"}
+                          </span>
+                          <Badge variant="outline">{item.count}</Badge>
+                        </div>
+                      ))}
+                      {(!stats?.postsByStatus || stats.postsByStatus.length === 0) && (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          No data available
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 
-                <Card className="shadow-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-2 bg-success/10 rounded-lg">
-                        <TrendingUp className="h-4 w-4 text-success" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                        <p className="text-2xl font-bold">3.2%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="shadow-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-2 bg-accent/10 rounded-lg">
-                        <Users className="h-4 w-4 text-accent-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Active Links</p>
-                        <p className="text-2xl font-bold">{mockInfluencers.filter(i => i.trackingLink).length}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
 
-              <Card className="shadow-card">
+              {/* Top Campaigns */}
+              <Card className="shadow-sm">
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
+                  <CardTitle>Top Campaigns by Posts</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockInfluencers.map((influencer) => (
-                      <div key={influencer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
-                            {influencer.name.split(' ').map(n => n[0]).join('')}
+                    {stats?.topCampaigns?.slice(0, 5).map((item) => (
+                      <div
+                        key={item._id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => {
+                          const campaign = campaigns.find(c => c._id === item._id);
+                          if (campaign) setSelectedCampaign(campaign);
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-sm font-bold">
+                            {item.campaignName?.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{influencer.name}</p>
-                            <p className="text-sm text-muted-foreground">Last activity: 2 hours ago</p>
+                            <p className="font-medium">{item.campaignName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.linkCount} links • {item.postCount} posts
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">127 clicks</p>
-                          <p className="text-sm text-success">+23% vs yesterday</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {formatNumber(item.totalClicks)} clicks
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                     ))}
+                    {(!stats?.topCampaigns || stats.topCampaigns.length === 0) && (
+                      <p className="text-center text-muted-foreground py-8">
+                        No tracking data yet
+                      </p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="links" className="space-y-6">
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle>Link Generator</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedInfluencer && (
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-3">Generate tracking link for {selectedInfluencer.name}</h4>
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="campaign">Campaign Name</Label>
-                          <Input id="campaign" placeholder="Enter campaign name" />
-                        </div>
-                        <div>
-                          <Label htmlFor="link">Generated Tracking Link</Label>
-                          <div className="flex items-center space-x-2">
-                            <Input 
-                              id="link" 
-                              value={generateTrackingLink(selectedInfluencer)}
-                              readOnly
-                              className="font-mono text-sm"
-                            />
-                            <Button
-                              size="sm"
-                              onClick={() => copyToClipboard(generateTrackingLink(selectedInfluencer))}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <Button onClick={() => {
-                          // Here you would save the tracking link
-                          toast({
-                            title: "Success!",
-                            description: "Tracking link generated and saved",
-                          });
-                          setSelectedInfluencer(null);
-                        }}>
-                          Save Tracking Link
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {!selectedInfluencer && (
-                    <p className="text-muted-foreground text-center py-8">
-                      Select an influencer from the Active Campaigns tab to generate a tracking link
-                    </p>
-                  )}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </main>
       </div>
+
+      {/* Campaign Influencers Modal */}
+      <CampaignInfluencersModal
+        isOpen={!!selectedCampaign}
+        onClose={() => setSelectedCampaign(null)}
+        campaign={selectedCampaign}
+      />
     </div>
   );
 };
+
+export default InfluencerTracking;

@@ -23,11 +23,12 @@ import {
   Loader2,
   ExternalLink,
   Plus,
+  Briefcase,
 } from "lucide-react";
 import { influencersAPI, Influencer, Platform, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-// PlatformIconLink component (same as before)
+// PlatformIconLink component
 const PlatformIconLink = ({ platform }: { platform: Platform }) => {
   const getIcon = (name: string) => {
     const iconClass = "h-5 w-5";
@@ -99,18 +100,42 @@ const PlatformIconLink = ({ platform }: { platform: Platform }) => {
   );
 };
 
+// Collaboration status badge helper
+const getCollaborationStatusBadge = (status: string) => {
+  const statusStyles: Record<string, string> = {
+    invited: 'bg-yellow-100 text-yellow-800',
+    accepted: 'bg-blue-100 text-blue-800',
+    in_progress: 'bg-purple-100 text-purple-800',
+    completed: 'bg-green-100 text-green-800',
+    declined: 'bg-red-100 text-red-800',
+    cancelled: 'bg-gray-100 text-gray-800',
+  };
+  
+  return (
+    <Badge className={statusStyles[status] || 'bg-gray-100 text-gray-800'}>
+      {status?.replace('_', ' ') || 'Assigned'}
+    </Badge>
+  );
+};
+
 export const Influencers = () => {
   const { toast } = useToast();
 
   // Data state
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [collaboratingInfluencers, setCollaboratingInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [collaboratingLoading, setCollaboratingLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Active tab
+  const [activeTab, setActiveTab] = useState("all");
 
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [collaboratingTotal, setCollaboratingTotal] = useState(0);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,8 +151,12 @@ export const Influencers = () => {
   const [selectedInfluencer, setSelectedInfluencer] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
-    fetchInfluencers();
-  }, [page, searchTerm, platform, status, country, sortBy, sortOrder]);
+    if (activeTab === "all") {
+      fetchInfluencers();
+    } else if (activeTab === "collaborating") {
+      fetchCollaboratingInfluencers();
+    }
+  }, [page, searchTerm, platform, status, country, sortBy, sortOrder, activeTab]);
 
   const fetchInfluencers = async () => {
     setLoading(true);
@@ -154,6 +183,33 @@ export const Influencers = () => {
       setTotalPages(result.totalPages || Math.ceil((result.total || data.length) / 10));
     }
     setLoading(false);
+  };
+
+  const fetchCollaboratingInfluencers = async () => {
+    setCollaboratingLoading(true);
+    setError(null);
+
+    const result = await influencersAPI.getCollaborating({
+      search: searchTerm || undefined,
+      page,
+      limit: 20,
+    });
+
+    if (!result.success) {
+      setError(result.message || "Failed to load collaborating influencers");
+      setCollaboratingInfluencers([]);
+    } else {
+      const data = Array.isArray(result.data) ? result.data : [];
+      setCollaboratingInfluencers(data);
+      setCollaboratingTotal(result.total || data.length);
+    }
+    setCollaboratingLoading(false);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setPage(1);
+    setSearchTerm("");
   };
 
   const handlePageChange = (newPage: number) => {
@@ -211,10 +267,170 @@ export const Influencers = () => {
 
   // Stats
   const avgEngagement = influencers.length > 0
-    ? (influencers.reduce((acc, inf) => acc + (inf.avgEngagement || 0), 0) / influencers.length).toFixed(1)
+    ? (influencers.reduce((acc, inf) => acc + Number(inf.avgEngagement || 0), 0) / influencers.length).toFixed(1)
     : "0";
   const totalReach = influencers.reduce((acc, inf) => acc + (inf.totalFollowers || 0), 0);
   const hasActiveFilters = platform || status || country || searchTerm;
+
+  // Render influencer card - reusable for both tabs
+  const renderInfluencerCard = (influencer: Influencer, showCampaigns: boolean = false) => (
+    <Card
+      key={influencer._id}
+      className="border hover:border-primary/40 hover:shadow-md transition-all"
+    >
+      <CardContent className="p-5">
+        <div className="flex items-center gap-6">
+          {/* Avatar + Info */}
+          <div className="flex items-center gap-4 min-w-[320px]">
+            <Avatar className="h-14 w-14 border-2 border-muted">
+              <AvatarImage src={influencer.profileImage} alt={influencer.name} />
+              <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
+                {influencer.name?.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+                {influencer.isVerified && (
+                  <Badge className="bg-blue-500 text-white text-[10px] px-1.5">✓</Badge>
+                )}
+              </div>
+
+              {/* Platform Icons */}
+              <div className="flex items-center gap-3 mt-2">
+                {influencer.platforms?.map((p) => (
+                  <PlatformIconLink key={p._id || p.platform} platform={p} />
+                ))}
+              </div>
+
+              {/* Location */}
+              {(influencer.location?.city || influencer.location?.country) && (
+                <div className="flex items-center gap-1 mt-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {[influencer.location.city, influencer.location.country]
+                    .filter(Boolean)
+                    .join(", ")}
+                </div>
+              )}
+
+              {/* Campaign badges for collaborating tab */}
+              {showCampaigns && influencer.campaigns && influencer.campaigns.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {influencer.campaigns.slice(0, 3).map((campaign) => (
+                    <Link 
+                      key={campaign._id} 
+                      to={`/campaigns/${campaign._id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs hover:bg-primary/10 cursor-pointer"
+                      >
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        {campaign.name}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {influencer.campaigns.length > 3 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{influencer.campaigns.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex-1 flex items-center justify-center gap-8">
+            <div className="text-center">
+              <p className="text-2xl font-bold">
+                {formatNumber(influencer.totalFollowers || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Total Followers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {Number(influencer.avgEngagement || 0).toFixed(1)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Avg Engagement</p>
+            </div>
+            {showCampaigns ? (
+              <>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {influencer.totalCampaigns || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Campaigns</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">
+                    {influencer.activeCampaigns || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Active</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">
+                    {influencer.platformCount || influencer.platforms?.length || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Platforms</p>
+                </div>
+                <div className="text-center">
+                  <Badge
+                    variant={influencer.status === 'available' ? 'default' : 'secondary'}
+                    className="mb-1"
+                  >
+                    {influencer.status || 'Available'}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-2 min-w-[150px]">
+            {showCampaigns ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleContactClick(influencer)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact
+                </Button>
+                {influencer.campaigns && influencer.campaigns.length > 0 && (
+                  <Button 
+                    variant="ghost"
+                    asChild
+                  >
+                    <Link to={`/campaigns/${influencer.campaigns[0]._id}`}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Campaign
+                    </Link>
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button onClick={() => handleAddToShortlist(influencer)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add to Shortlist
+                </Button>
+                <Button variant="outline" onClick={() => handleContactClick(influencer)}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -229,19 +445,13 @@ export const Influencers = () => {
               <h1 className="text-3xl font-bold">Influencers</h1>
               <p className="text-base text-muted-foreground mt-1">Manage your influencer network</p>
             </div>
-            {/* <Button size="lg" asChild>
-              <Link to="/search">
-                <Search className="mr-2 h-5 w-5" />
-                Find New Influencers
-              </Link>
-            </Button> */}
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { label: "Total Influencers", value: total, icon: Users, color: "text-primary", bg: "bg-primary/10" },
-              { label: "Active Collaborations", value: 0, icon: TrendingUp, color: "text-green-600", bg: "bg-green-500/10" },
+              { label: "Active Collaborations", value: collaboratingTotal, icon: TrendingUp, color: "text-green-600", bg: "bg-green-500/10" },
               { label: "Avg Engagement", value: `${avgEngagement}%`, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-500/10" },
               { label: "Total Reach", value: formatNumber(totalReach), icon: Eye, color: "text-purple-600", bg: "bg-purple-500/10" },
             ].map((stat) => (
@@ -274,29 +484,33 @@ export const Influencers = () => {
                     />
                   </div>
 
-                  <Button
-                    variant={showFilters ? "secondary" : "outline"}
-                    size="lg"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    <Filter className="mr-2 h-5 w-5" />
-                    Filters {hasActiveFilters && "(Active)"}
-                  </Button>
+                  {activeTab === "all" && (
+                    <>
+                      <Button
+                        variant={showFilters ? "secondary" : "outline"}
+                        size="lg"
+                        onClick={() => setShowFilters(!showFilters)}
+                      >
+                        <Filter className="mr-2 h-5 w-5" />
+                        Filters {hasActiveFilters && "(Active)"}
+                      </Button>
 
-                  <select
-                    className="h-11 min-w-[200px] rounded-md border border-input bg-background px-4 text-sm"
-                    value={`${sortBy}-${sortOrder}`}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                  >
-                    <option value="createdAt-desc">Newest First</option>
-                    <option value="createdAt-asc">Oldest First</option>
-                    <option value="followers-desc">Followers (High to Low)</option>
-                    <option value="followers-asc">Followers (Low to High)</option>
-                    <option value="engagement-desc">Engagement (High to Low)</option>
-                  </select>
+                      <select
+                        className="h-11 min-w-[200px] rounded-md border border-input bg-background px-4 text-sm"
+                        value={`${sortBy}-${sortOrder}`}
+                        onChange={(e) => handleSortChange(e.target.value)}
+                      >
+                        <option value="createdAt-desc">Newest First</option>
+                        <option value="createdAt-asc">Oldest First</option>
+                        <option value="followers-desc">Followers (High to Low)</option>
+                        <option value="followers-asc">Followers (Low to High)</option>
+                        <option value="engagement-desc">Engagement (High to Low)</option>
+                      </select>
+                    </>
+                  )}
                 </div>
 
-                {showFilters && (
+                {showFilters && activeTab === "all" && (
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Platform</label>
@@ -357,123 +571,35 @@ export const Influencers = () => {
           {/* Influencers List */}
           <Card className="shadow-sm">
             <CardContent className="p-5">
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-20 text-destructive">{error}</div>
-              ) : (
-                <Tabs defaultValue="all" className="w-full">
-                  <TabsList className="h-11 mb-6">
-                    <TabsTrigger value="all" className="px-6">All ({total})</TabsTrigger>
-                    <TabsTrigger value="collaborating" className="px-6">Collaborating</TabsTrigger>
-                    <TabsTrigger value="favorites" className="px-6">Favorites</TabsTrigger>
-                  </TabsList>
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="h-11 mb-6">
+                  <TabsTrigger value="all" className="px-6">All ({total})</TabsTrigger>
+                  <TabsTrigger value="collaborating" className="px-6">Collaborating ({collaboratingTotal})</TabsTrigger>
+                  <TabsTrigger value="favorites" className="px-6">Favorites</TabsTrigger>
+                </TabsList>
 
-                  <TabsContent value="all" className="space-y-3">
-                    {influencers.length === 0 ? (
-                      <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
-                        <p className="text-lg font-medium">No influencers found</p>
-                        <p className="text-muted-foreground">Try adjusting your filters</p>
-                        <Button variant="link" onClick={clearFilters} className="mt-2">
-                          Clear all filters
-                        </Button>
-                      </div>
-                    ) : (
-                      influencers.map((influencer) => (
-                        <Card
-                          key={influencer._id}
-                          className="border hover:border-primary/40 hover:shadow-md transition-all"
-                        >
-                          <CardContent className="p-5">
-                            <div className="flex items-center gap-6">
-                              {/* Avatar + Info */}
-                              <div className="flex items-center gap-4 min-w-[320px]">
-                                <Avatar className="h-14 w-14 border-2 border-muted">
-                                  <AvatarImage src={influencer.profileImage} alt={influencer.name} />
-                                  <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
-                                    {influencer.name?.slice(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
-                                    {influencer.isVerified && (
-                                      <Badge className="bg-blue-500 text-white text-[10px] px-1.5">✓</Badge>
-                                    )}
-                                  </div>
+                {/* All Influencers Tab */}
+                <TabsContent value="all" className="space-y-3">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-20 text-destructive">{error}</div>
+                  ) : influencers.length === 0 ? (
+                    <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
+                      <p className="text-lg font-medium">No influencers found</p>
+                      <p className="text-muted-foreground">Try adjusting your filters</p>
+                      <Button variant="link" onClick={clearFilters} className="mt-2">
+                        Clear all filters
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {influencers.map((influencer) => renderInfluencerCard(influencer, false))}
 
-                                  {/* Platform Icons */}
-                                  <div className="flex items-center gap-3 mt-2">
-                                    {influencer.platforms?.map((p) => (
-                                      <PlatformIconLink key={p._id || p.platform} platform={p} />
-                                    ))}
-                                  </div>
-
-                                  {/* Location */}
-                                  {(influencer.location?.city || influencer.location?.country) && (
-                                    <div className="flex items-center gap-1 mt-1.5 text-sm text-muted-foreground">
-                                      <MapPin className="h-3.5 w-3.5" />
-                                      {[influencer.location.city, influencer.location.country]
-                                        .filter(Boolean)
-                                        .join(", ")}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Stats */}
-                              <div className="flex-1 flex items-center justify-center gap-8">
-                                <div className="text-center">
-                                  <p className="text-2xl font-bold">
-                                    {formatNumber(influencer.totalFollowers || 0)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">Total Followers</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-2xl font-bold text-green-600">
-                                    {(influencer.avgEngagement || 0).toFixed(1)}%
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">Avg Engagement</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-2xl font-bold">
-                                    {influencer.platformCount || influencer.platforms?.length || 0}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">Platforms</p>
-                                </div>
-                                <div className="text-center">
-                                  <Badge
-                                    variant={influencer.status === 'available' ? 'default' : 'secondary'}
-                                    className="mb-1"
-                                  >
-                                    {influencer.status || 'Available'}
-                                  </Badge>
-                                  <p className="text-xs text-muted-foreground">Status</p>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex flex-col gap-2 min-w-[150px]">
-                                <Button onClick={() => handleAddToShortlist(influencer)}>
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add to Shortlist
-                                </Button>
-                                <Button variant="outline" onClick={() => handleContactClick(influencer)}>
-                                  <MessageSquare className="h-4 w-4 mr-2" />
-                                  Contact
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-
-                    {/* Pagination */}
-                    {influencers.length > 0 && (
+                      {/* Pagination */}
                       <div className="flex items-center justify-between border-t pt-6 mt-6">
                         <p className="text-sm text-muted-foreground">
                           Page <span className="font-medium">{page}</span> of{" "}
@@ -499,24 +625,50 @@ export const Influencers = () => {
                           </Button>
                         </div>
                       </div>
-                    )}
-                  </TabsContent>
+                    </>
+                  )}
+                </TabsContent>
 
-                  <TabsContent value="collaborating">
-                    <div className="text-center py-16 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
-                      <p>No active collaborations</p>
+                {/* Collaborating Influencers Tab */}
+                <TabsContent value="collaborating" className="space-y-3">
+                  {collaboratingLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  </TabsContent>
+                  ) : error ? (
+                    <div className="text-center py-20 text-destructive">{error}</div>
+                  ) : collaboratingInfluencers.length === 0 ? (
+                    <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
+                      <p className="text-lg font-medium">No active collaborations</p>
+                      <p className="text-muted-foreground mt-1">
+                        Add influencers to your campaigns to see them here
+                      </p>
+                      <Button asChild className="mt-4">
+                        <Link to="/campaigns">
+                          <Briefcase className="h-4 w-4 mr-2" />
+                          Go to Campaigns
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {collaboratingInfluencers.map((influencer) => renderInfluencerCard(influencer, true))}
+                    </>
+                  )}
+                </TabsContent>
 
-                  <TabsContent value="favorites">
-                    <div className="text-center py-16 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
-                      <p>No favorite influencers yet</p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              )}
+                {/* Favorites Tab */}
+                <TabsContent value="favorites">
+                  <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
+                    <p className="text-lg font-medium">No favorite influencers yet</p>
+                    <p className="text-muted-foreground mt-1">
+                      Save influencers to your favorites for quick access
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </main>
@@ -530,7 +682,10 @@ export const Influencers = () => {
           influencerId={selectedInfluencer.id}
           influencerName={selectedInfluencer.name}
           onSuccess={(campaignId, campaignName) => {
-            // Optional: refresh data or show additional feedback
+            // Refresh collaborating influencers if on that tab
+            if (activeTab === "collaborating") {
+              fetchCollaboratingInfluencers();
+            }
           }}
         />
       )}

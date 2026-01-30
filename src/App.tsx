@@ -48,6 +48,7 @@ import { AnalyticsReporting } from "./pages/help/AnalyticsReporting";
 import { InfluencerSearch } from "./pages/help/InfluencerSearch";
 import { AccountSettings } from "./pages/help/AccountSettings";
 import { BillingPricing } from "./pages/help/BillingPricing";
+import TrackingSubmission from "./pages/TrackingSubmission.js";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ const App = () => {
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/edit-campaign/:id" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
               {/* <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} /> */}
+              <Route path="/t/:trackingCode" element={<TrackingSubmission />} />
               <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
               <Route path="/tracking" element={<ProtectedRoute><InfluencerTracking /></ProtectedRoute>} />
               <Route path="/shortlist" element={<ProtectedRoute><ShortlistPage /></ProtectedRoute>} />
