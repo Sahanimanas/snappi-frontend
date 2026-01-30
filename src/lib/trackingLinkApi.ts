@@ -5,7 +5,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Helper to get auth token
 const getToken = (): string | null => {
-  return localStorage.getItem('token');
+  // Try multiple possible token keys
+  return localStorage.getItem('snappi_user_token') || 
+         localStorage.getItem('token') || 
+         null;
 };
 
 // Helper for authenticated requests
@@ -19,14 +22,16 @@ const publicHeaders = () => ({
   'Content-Type': 'application/json',
 });
 
-interface ApiResponse<T = any> {
+// ============ TYPE DEFINITIONS ============
+
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   count?: number;
 }
 
-interface SubmitPostData {
+export interface SubmitPostData {
   platform: string;
   postType?: string;
   postUrl: string;
@@ -34,12 +39,35 @@ interface SubmitPostData {
   postedAt?: string;
 }
 
-interface TrackingLinkData {
+export interface SubmittedPost {
+  _id: string;
+  platform: string;
+  postType: string;
+  postUrl: string;
+  caption?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  postedAt?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  metrics: {
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    saves: number;
+    clicks: number;
+    reach: number;
+    impressions: number;
+  };
+}
+
+export interface TrackingLink {
   _id: string;
   trackingCode: string;
   trackingUrl: string;
   destinationUrl: string;
-  status: string;
+  status: 'active' | 'paused' | 'expired' | 'completed';
   campaign: {
     _id: string;
     name: string;
@@ -50,34 +78,56 @@ interface TrackingLinkData {
     name: string;
     email?: string;
     profileImage?: string;
+    platforms?: Array<{
+      platform: string;
+      username?: string;
+      followers?: number;
+      engagement?: number;
+    }>;
   };
-  submittedPosts: Array<{
-    _id: string;
-    platform: string;
-    postType: string;
-    postUrl: string;
-    caption?: string;
-    status: string;
-    submittedAt: string;
-    metrics?: {
-      views: number;
-      likes: number;
-      comments: number;
-      shares: number;
-    };
-  }>;
+  submittedPosts: SubmittedPost[];
   totalPerformance?: {
     totalViews: number;
     totalLikes: number;
     totalComments: number;
     totalShares: number;
     totalClicks: number;
+    totalReach: number;
+    totalImpressions: number;
   };
   clickStats?: {
     totalClicks: number;
     uniqueClicks: number;
     lastClickedAt?: string;
   };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TrackingStats {
+  overview: {
+    totalLinks: number;
+    activeLinks: number;
+    totalClicks: number;
+    uniqueClicks: number;
+    totalPosts: number;
+    totalViews: number;
+    totalLikes: number;
+    totalComments: number;
+    totalShares: number;
+    totalReach: number;
+  };
+  postsByStatus: Array<{
+    _id: string;
+    count: number;
+  }>;
+  topCampaigns: Array<{
+    _id: string;
+    campaignName: string;
+    linkCount: number;
+    postCount: number;
+    totalClicks: number;
+  }>;
 }
 
 export const trackingLinkAPI = {
@@ -87,7 +137,7 @@ export const trackingLinkAPI = {
    * Get tracking link details by code (public)
    * Used by influencers to view their submission page
    */
-  getByCode: async (code: string): Promise<ApiResponse<TrackingLinkData>> => {
+  getByCode: async (code: string): Promise<ApiResponse<TrackingLink>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/tracking-links/code/${code}`, {
         method: 'GET',
@@ -149,7 +199,7 @@ export const trackingLinkAPI = {
     influencerId: string;
     destinationUrl?: string;
     notes?: string;
-  }): Promise<ApiResponse<TrackingLinkData>> => {
+  }): Promise<ApiResponse<TrackingLink>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/tracking-links/generate`, {
         method: 'POST',
@@ -166,7 +216,7 @@ export const trackingLinkAPI = {
   /**
    * Get all tracking links for a campaign
    */
-  getByCampaign: async (campaignId: string): Promise<ApiResponse<TrackingLinkData[]>> => {
+  getByCampaign: async (campaignId: string): Promise<ApiResponse<TrackingLink[]>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/tracking-links/campaign/${campaignId}`, {
         method: 'GET',
@@ -182,7 +232,7 @@ export const trackingLinkAPI = {
   /**
    * Get a single tracking link by ID
    */
-  getById: async (id: string): Promise<ApiResponse<TrackingLinkData>> => {
+  getById: async (id: string): Promise<ApiResponse<TrackingLink>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/tracking-links/${id}`, {
         method: 'GET',
@@ -202,7 +252,7 @@ export const trackingLinkAPI = {
     destinationUrl?: string;
     notes?: string;
     status?: string;
-  }): Promise<ApiResponse<TrackingLinkData>> => {
+  }): Promise<ApiResponse<TrackingLink>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/tracking-links/${id}`, {
         method: 'PUT',

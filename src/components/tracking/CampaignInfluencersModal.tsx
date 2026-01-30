@@ -34,7 +34,7 @@ interface CampaignInfluencersModalProps {
 }
 
 const getStatusBadge = (status: string) => {
-  const statusConfig: Record<string, { variant: any; icon: any; label: string }> = {
+  const statusConfig: Record<string, { variant: "default" | "outline" | "destructive" | "secondary"; icon: any; label: string }> = {
     active: { variant: "default", icon: CheckCircle2, label: "Active" },
     paused: { variant: "outline", icon: Clock, label: "Paused" },
     expired: { variant: "destructive", icon: Clock, label: "Expired" },
@@ -92,11 +92,17 @@ export const CampaignInfluencersModal = ({
     if (!campaign) return;
     
     setGeneratingLink(influencerId);
-    const result = await trackingLinkAPI.generate(campaign._id, influencerId);
     
-    if (result.success) {
+    // Use the new object-based API signature
+    const result = await trackingLinkAPI.generate({
+      campaignId: campaign._id,
+      influencerId: influencerId,
+      destinationUrl: (campaign as any).targetUrl || '',
+    });
+    
+    if (result.success && result.data) {
       // Add or update the tracking link in the list
-      const newLink = result.data;
+      const newLink = result.data as TrackingLink;
       setTrackingLinks(prev => {
         const existingIndex = prev.findIndex(
           tl => tl.influencer._id === influencerId
@@ -173,7 +179,7 @@ export const CampaignInfluencersModal = ({
 
   const getAvgEngagement = (platforms: TrackingLink['influencer']['platforms']) => {
     if (!platforms || platforms.length === 0) return 0;
-    const total = platforms.reduce((sum, p) => sum + (p.engagement || 0), 0);
+    const total = platforms.reduce((sum, p) => sum + (Number(p.engagement) || 0), 0);
     return (total / platforms.length).toFixed(1);
   };
 
@@ -213,12 +219,12 @@ export const CampaignInfluencersModal = ({
                 {trackingLinks.reduce((sum, tl) => sum + (tl.submittedPosts?.length || 0), 0)}
               </p>
             </div>
-            {/* <div className="text-center">
+            <div className="text-center">
               <p className="text-xs text-muted-foreground">Total Clicks</p>
               <p className="text-lg font-bold text-green-600">
                 {formatNumber(trackingLinks.reduce((sum, tl) => sum + (tl.clickStats?.totalClicks || 0), 0))}
               </p>
-            </div> */}
+            </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Pending Review</p>
               <p className="text-lg font-bold text-yellow-600">

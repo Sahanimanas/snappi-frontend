@@ -26,7 +26,6 @@ import {
   Copy,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Enums } from "@/integrations/supabase/types";
 
 interface InfluencerPostsModalProps {
   isOpen: boolean;
@@ -71,9 +70,9 @@ export const InfluencerPostsModal = ({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleUpdateStatus = async (postId: string, status: any) => {
+  const handleUpdateStatus = async (postId: string, status: 'approved' | 'rejected' | 'pending') => {
     setActionLoading(postId);
-    const result = await trackingLinkAPI.updatePostStatus(trackingLink._id, postId, status);
+    const result = await trackingLinkAPI.updatePostStatus(trackingLink._id, postId, { status });
     
     if (result.success) {
       setPosts(prev =>
@@ -125,7 +124,8 @@ export const InfluencerPostsModal = ({
     });
   };
 
-  const formatMetric = (value: number) => {
+  const formatMetric = (value: number | undefined) => {
+    if (value === undefined) return "0";
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
     if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
     return value.toString();
@@ -179,12 +179,12 @@ export const InfluencerPostsModal = ({
               {posts.filter(p => p.status === "pending").length}
             </p>
           </div>
-          {/* <div className="text-center">
+          <div className="text-center">
             <p className="text-xs text-muted-foreground">Total Clicks</p>
             <p className="text-xl font-bold">
               {formatMetric(trackingLink.clickStats?.totalClicks || 0)}
             </p>
-          </div> */}
+          </div>
         </div>
 
         {/* Posts List */}
@@ -291,7 +291,7 @@ export const InfluencerPostsModal = ({
                 </div>
 
                 {/* Metrics */}
-                {post.status === "approved" && (
+                {post.status === "approved" && post.metrics && (
                   <div className="flex items-center gap-6 mt-4 pt-4 border-t">
                     <div className="flex items-center gap-1.5 text-sm">
                       <Eye className="h-4 w-4 text-muted-foreground" />
