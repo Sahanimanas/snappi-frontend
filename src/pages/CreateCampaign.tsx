@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Target, Users, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Target, Users, FileText, Loader2, Link2, Plus, X } from "lucide-react";
 import { campaignsAPI, Campaign } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,6 +44,7 @@ interface FormData {
   startDate: string;
   endDate: string;
   targetPlatforms: string[];
+  productUrls: string[];
 }
 
 export const CreateCampaign = () => {
@@ -64,6 +65,7 @@ export const CreateCampaign = () => {
     startDate: "",
     endDate: "",
     targetPlatforms: [],
+    productUrls: [],
   });
 
   useEffect(() => {
@@ -90,6 +92,7 @@ export const CreateCampaign = () => {
       startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "",
       endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
       targetPlatforms: c.targetPlatforms || [],
+      productUrls: c.productUrls || [],
     });
     setFetching(false);
   };
@@ -104,6 +107,27 @@ export const CreateCampaign = () => {
       targetPlatforms: prev.targetPlatforms.includes(platform)
         ? prev.targetPlatforms.filter((p) => p !== platform)
         : [...prev.targetPlatforms, platform],
+    }));
+  };
+
+  const addProductUrl = () => {
+    setFormData((prev) => ({
+      ...prev,
+      productUrls: [...prev.productUrls, ""],
+    }));
+  };
+
+  const removeProductUrl = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      productUrls: prev.productUrls.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateProductUrl = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      productUrls: prev.productUrls.map((url, i) => (i === index ? value : url)),
     }));
   };
 
@@ -127,6 +151,7 @@ export const CreateCampaign = () => {
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
       targetPlatforms: formData.targetPlatforms,
+      productUrls: formData.productUrls.filter(url => url.trim() !== ""),
     };
 
     const result = isEditMode
@@ -326,6 +351,50 @@ export const CreateCampaign = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Product URLs */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="h-4 w-4" />
+                  Product URLs
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Add the product URLs that influencers will promote in this campaign.
+                </p>
+                {formData.productUrls.map((url, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={url}
+                      onChange={(e) => updateProductUrl(index, e.target.value)}
+                      placeholder="https://example.com/product"
+                      className="h-9 flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeProductUrl(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={addProductUrl}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Product URL
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">

@@ -37,7 +37,14 @@ import {
   Check,
   Loader2,
   ExternalLink,
+  FileText,
+  XCircle,
+  MessageSquare,
+  Clock,
+  Link2,
 } from "lucide-react";
+import { SendContractDialog } from "@/components/SendContractDialog";
+import { contractsAPI } from "@/lib/contractApi";
 import { campaignsAPI, Campaign, Influencer, formatNumber } from "@/lib/api";
 import { trackingLinkAPI } from "@/lib/trackingLinkApi";
 import { useToast } from "@/hooks/use-toast";
@@ -95,11 +102,20 @@ export const CampaignDetail = () => {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Contract states
+  const [contractStatuses, setContractStatuses] = useState<Record<string, {
+    status: string;
+    contractTitle?: string;
+  }>>({});
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractInfluencer, setContractInfluencer] = useState<any>(null);
+
   useEffect(() => {
     if (id) {
       fetchCampaign();
       fetchPerformance();
       fetchTrackingLinks();
+      fetchContractStatuses();
     }
   }, [id]);
 
@@ -132,6 +148,63 @@ export const CampaignDetail = () => {
         }
       });
       setTrackingLinks(linksMap);
+    }
+  };
+
+  const fetchContractStatuses = async () => {
+    const result = await contractsAPI.getByCampaign(id!);
+    if (result.success && result.data) {
+      const statusMap: Record<string, { status: string; contractTitle?: string }> = {};
+      result.data.forEach((sc: any) => {
+        statusMap[sc.influencerId] = {
+          status: sc.status,
+          contractTitle: sc.contractTitle,
+        };
+      });
+      setContractStatuses(statusMap);
+    }
+  };
+
+  const handleOpenContractDialog = (influencer: any) => {
+    setContractInfluencer(influencer);
+    setContractDialogOpen(true);
+  };
+
+  const getContractStatusBadge = (influencerId: string) => {
+    const status = contractStatuses[influencerId];
+    if (!status) return null;
+
+    switch (status.status) {
+      case 'accepted':
+        return (
+          <Badge className="bg-green-100 text-green-700 text-[10px] h-5">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Accepted
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive" className="text-[10px] h-5">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      case 'connected':
+        return (
+          <Badge className="bg-blue-100 text-blue-700 text-[10px] h-5">
+            <MessageSquare className="h-3 w-3 mr-1" />
+            Connected
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="text-[10px] h-5">
+            <Clock className="h-3 w-3 mr-1" />
+            Contract Sent
+          </Badge>
+        );
+      default:
+        return null;
     }
   };
 
@@ -458,7 +531,7 @@ export const CampaignDetail = () => {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="text-sm font-medium truncate">
                                   {inf.name || "Influencer"}
                                 </p>
@@ -468,6 +541,7 @@ export const CampaignDetail = () => {
                                     Link Active
                                   </Badge>
                                 )}
+                                {getContractStatusBadge(inf._id)}
                               </div>
                               <p className="text-[11px] text-muted-foreground">
                                 @{getUsername(inf)}
@@ -491,31 +565,44 @@ export const CampaignDetail = () => {
                             </div>
                           </div>
 
-                          {/* Generate Link Button */}
-                          <Button
-                            variant={hasTrackingLink(inf._id) ? "outline" : "default"}
-                            size="sm"
-                            onClick={() => handleGenerateLink(inf)}
-                            disabled={generatingFor === inf._id}
-                            className="shrink-0 gap-1.5"
-                          >
-                            {generatingFor === inf._id ? (
-                              <>
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                <span className="hidden sm:inline">Generating...</span>
-                              </>
-                            ) : hasTrackingLink(inf._id) ? (
-                              <>
-                                <LinkIcon className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">View Link</span>
-                              </>
-                            ) : (
-                              <>
-                                <LinkIcon className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Generate Link</span>
-                              </>
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            {!contractStatuses[inf._id] && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenContractDialog(inf)}
+                                className="gap-1.5"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Send Contract</span>
+                              </Button>
                             )}
-                          </Button>
+                            <Button
+                              variant={hasTrackingLink(inf._id) ? "outline" : "default"}
+                              size="sm"
+                              onClick={() => handleGenerateLink(inf)}
+                              disabled={generatingFor === inf._id}
+                              className="gap-1.5"
+                            >
+                              {generatingFor === inf._id ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  <span className="hidden sm:inline">Generating...</span>
+                                </>
+                              ) : hasTrackingLink(inf._id) ? (
+                                <>
+                                  <LinkIcon className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">View Link</span>
+                                </>
+                              ) : (
+                                <>
+                                  <LinkIcon className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">Generate Link</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -603,6 +690,32 @@ export const CampaignDetail = () => {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Product URLs */}
+              {campaign.productUrls && campaign.productUrls.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Link2 className="h-4 w-4" />
+                      Product URLs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {campaign.productUrls.map((url, index) => (
+                      <a
+                        key={index}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-primary hover:underline truncate p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{url}</span>
+                      </a>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </main>
@@ -709,6 +822,22 @@ export const CampaignDetail = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Send Contract Dialog */}
+      {contractInfluencer && (
+        <SendContractDialog
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          influencer={{
+            _id: contractInfluencer._id,
+            name: contractInfluencer.name,
+            email: contractInfluencer.email,
+          }}
+          campaignId={id}
+          campaignName={campaign?.name}
+          onSuccess={fetchContractStatuses}
+        />
+      )}
     </div>
   );
 };

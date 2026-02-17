@@ -50,6 +50,9 @@ import { AccountSettings } from "./pages/help/AccountSettings";
 import { BillingPricing } from "./pages/help/BillingPricing";
 import TrackingSubmission from "./pages/TrackingSubmission.js";
 import TrackingRedirect from "./pages/TrackingRedirect.js";
+import { Contracts } from "./pages/Contracts";
+import { CreateContract } from "./pages/CreateContract";
+import { ContractResponse } from "./pages/ContractResponse";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +115,10 @@ const App = () => {
               <Route path="/help/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
               <Route path="/help/billing-pricing" element={<ProtectedRoute><BillingPricing /></ProtectedRoute>} />
               <Route path="/campaigns/:id" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+              <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
+              <Route path="/contracts/create" element={<ProtectedRoute><CreateContract /></ProtectedRoute>} />
+              <Route path="/contracts/edit/:id" element={<ProtectedRoute><CreateContract /></ProtectedRoute>} />
+              <Route path="/contract/respond/:token" element={<ContractResponse />} />
               {/* ---------------- FALLBACK ---------------- */}
               <Route path="*" element={<NotFound />} />
             </Routes>

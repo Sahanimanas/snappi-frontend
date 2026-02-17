@@ -198,6 +198,7 @@ export interface Campaign {
   startDate?: string;
   endDate?: string;
   targetPlatforms: string[];
+  productUrls?: string[];
   influencers?: string[];
   influencerCount?: number;
   performance?: { totalReach?: number; totalEngagement?: number; totalClicks?: number; totalConversions?: number; roi?: number };

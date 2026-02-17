@@ -9,8 +9,10 @@ import {
   Heart,
   MessageSquare,
   MoreHorizontal,
-  Search
+  Search,
+  FileText
 } from "lucide-react";
+import { SendContractDialog } from "@/components/SendContractDialog";
 import { useEffect, useState } from "react";
 import { useInfluencers, Influencer } from "@/hooks/useInfluencers";
 
@@ -20,6 +22,8 @@ export const Shortlist = () => {
   const { influencers, loading: influencersLoading } = useInfluencers();
   const [shortlistedIds, setShortlistedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
 
   // Load shortlist from localStorage
   useEffect(() => {
@@ -74,6 +78,11 @@ Best regards,
     const updatedIds = shortlistedIds.filter(id => id !== influencerId);
     setShortlistedIds(updatedIds);
     localStorage.setItem(SHORTLIST_KEY, JSON.stringify(updatedIds));
+  };
+
+  const handleSendContract = (influencer: Influencer) => {
+    setSelectedInfluencer(influencer);
+    setContractDialogOpen(true);
   };
 
   const isLoading = loading || influencersLoading;
@@ -237,6 +246,15 @@ Best regards,
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleSendContract(influencer)}
+                      disabled={!influencer.email}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Send Contract
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleMessageClick(influencer)}
                       disabled={!influencer.email}
                     >
@@ -264,6 +282,19 @@ Best regards,
           ))
         )}
       </div>
+
+      {/* Send Contract Dialog */}
+      {selectedInfluencer && (
+        <SendContractDialog
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          influencer={{
+            _id: selectedInfluencer.id,
+            name: selectedInfluencer.name,
+            email: selectedInfluencer.email,
+          }}
+        />
+      )}
     </div>
   );
 };

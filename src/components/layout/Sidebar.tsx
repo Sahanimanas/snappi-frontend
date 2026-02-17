@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Calendar, 
-  BarChart3, 
-  Users, 
-  Settings, 
+import {
+  Search,
+  Calendar,
+  BarChart3,
+  Users,
+  Settings,
   HelpCircle,
   PlusCircle,
   TrendingUp,
   Target,
   Puzzle,
-  Gift
+  Gift,
+  FileText
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,12 @@ const navigationItems = [
     href: "/tracking",
     icon: Calendar,
     badge: "New",
+  },
+  {
+    title: "Contracts",
+    href: "/contracts",
+    icon: FileText,
+    badge: null,
   },
 ];
 
