@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddToCampaignDialog } from "@/components/AddToCampaignDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
   Users,
@@ -150,15 +151,6 @@ const InfluencerCard = ({
               </p>
               <p className="text-xs text-muted-foreground">Platforms</p>
             </div>
-            <div className="text-center">
-              <Badge 
-                variant="default"
-                className="mb-1 capitalize bg-blue-500 hover:bg-blue-600"
-              >
-                {influencer.status || 'Available'}
-              </Badge>
-              <p className="text-xs text-muted-foreground">Status</p>
-            </div>
           </div>
 
           {/* Actions */}
@@ -195,9 +187,30 @@ export const SearchInfluencers = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [category, setCategory] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [niche, setNiche] = useState("");
   const [location, setLocation] = useState("");
+
+  // Available platforms for multi-select
+  const PLATFORMS = [
+    { id: "instagram", label: "Instagram" },
+    { id: "youtube", label: "YouTube" },
+    { id: "tiktok", label: "TikTok" },
+    { id: "twitter", label: "Twitter/X" },
+    { id: "facebook", label: "Facebook" },
+    { id: "linkedin", label: "LinkedIn" },
+    { id: "snapchat", label: "Snapchat" },
+    { id: "threads", label: "Threads" },
+  ];
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev =>
+      prev.includes(platformId)
+        ? prev.filter(p => p !== platformId)
+        : [...prev, platformId]
+    );
+    setPage(1);
+  };
 
   // Campaign Dialog
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
@@ -206,10 +219,13 @@ export const SearchInfluencers = () => {
   // Fetch influencers based on view mode
   const fetchInfluencers = async () => {
     setLoading(true);
-    
+
+    // Build search query combining search term and niche for AI-like search
+    const searchQuery = [searchTerm, niche].filter(Boolean).join(" ");
+
     if (viewMode === 'top') {
       const result = await influencersAPI.getTopByEngagement({
-        platform: platform || undefined,
+        platform: selectedPlatforms.length === 1 ? selectedPlatforms[0] : undefined,
         limit: 20,
       });
       if (result.success) {
@@ -222,8 +238,8 @@ export const SearchInfluencers = () => {
       const result = await influencersAPI.getAll({
         page,
         limit: 20,
-        search: searchTerm || undefined,
-        platform: platform || undefined,
+        search: searchQuery || undefined,
+        platform: selectedPlatforms.length === 1 ? selectedPlatforms[0] : undefined,
         country: location || undefined,
         sortBy: "createdAt",
         sortOrder: "desc",
@@ -241,7 +257,7 @@ export const SearchInfluencers = () => {
 
   useEffect(() => {
     fetchInfluencers();
-  }, [viewMode, page, platform, location]);
+  }, [viewMode, page, selectedPlatforms, location]);
 
   // Handlers
   const handleSearch = (e: React.FormEvent) => {
@@ -288,58 +304,50 @@ export const SearchInfluencers = () => {
         <Sidebar />
 
         <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto">
+          {/* AI-Powered Search Bar - KEY FEATURE */}
+          <Card className="shadow-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50/50 to-white">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-3 mb-4">
+                <Sparkles className="h-6 w-6 text-blue-500" />
+                <h2 className="text-xl font-bold">AI-Powered Influencer Search</h2>
+              </div>
+              <p className="text-muted-foreground mb-6">
+                Search using natural language like "health influencer male" or "fashion blogger female India"
+              </p>
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-500" />
+                  <Input
+                    placeholder="e.g., health influencer male, fashion blogger, tech reviewer..."
+                    className="pl-14 h-16 text-lg border-2 border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 shadow-lg shadow-blue-100 rounded-xl"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-12 px-8 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Search className="h-5 w-5 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
           {/* Search Filters Card */}
           <Card className="shadow-sm">
             <CardContent className="p-6">
               {/* Header */}
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Search Filters</h2>
+                <h2 className="text-lg font-semibold">Filters</h2>
               </div>
 
-              {/* Search Input */}
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, username, bio..."
-                    className="pl-10 h-11"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-                  />
-                </div>
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div className="grid grid-cols-4 gap-6 mb-6">
-                {/* Platform */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                        <line x1="12" y1="18" x2="12" y2="18"/>
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium">Platform</span>
-                  </div>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={platform}
-                    onChange={(e) => { setPlatform(e.target.value); setPage(1); }}
-                  >
-                    <option value="">All Platforms</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="tiktok">TikTok</option>
-                    <option value="twitter">Twitter/X</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="linkedin">LinkedIn</option>
-                  </select>
-                </div>
-
-                {/* Category */}
+              {/* Filter Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {/* Niche/Category - Open text field */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
@@ -348,24 +356,18 @@ export const SearchInfluencers = () => {
                         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                       </svg>
                     </div>
-                    <span className="text-sm font-medium">Category</span>
+                    <span className="text-sm font-medium">Niche / Category</span>
                   </div>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={category}
-                    onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-                  >
-                    <option value="">All Categories</option>
-                    <option value="tech">Technology</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="food">Food</option>
-                    <option value="travel">Travel</option>
-                  </select>
+                  <Input
+                    placeholder="e.g., fitness, tech, beauty, gaming..."
+                    className="h-10"
+                    value={niche}
+                    onChange={(e) => { setNiche(e.target.value); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
                 </div>
 
-                {/* Location */}
+                {/* Location - Open text field */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
@@ -373,18 +375,13 @@ export const SearchInfluencers = () => {
                     </div>
                     <span className="text-sm font-medium">Location</span>
                   </div>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  <Input
+                    placeholder="e.g., USA, India, London, South Africa..."
+                    className="h-10"
                     value={location}
-                    onChange={(e) => { setLocation(e.target.value); setPage(1); }}
-                  >
-                    <option value="">Any Location</option>
-                    <option value="USA">USA</option>
-                    <option value="UK">UK</option>
-                    <option value="India">India</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                  </select>
+                    onChange={(e) => { setLocation(e.target.value); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
                 </div>
 
                 {/* Shortlist */}
@@ -402,29 +399,70 @@ export const SearchInfluencers = () => {
                 </div>
               </div>
 
+              {/* Platform Multi-Select */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                      <line x1="12" y1="18" x2="12" y2="18"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium">Platforms</span>
+                  {selectedPlatforms.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {selectedPlatforms.length} selected
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {PLATFORMS.map((p) => (
+                    <div key={p.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`platform-${p.id}`}
+                        checked={selectedPlatforms.includes(p.id)}
+                        onCheckedChange={() => togglePlatform(p.id)}
+                      />
+                      <label
+                        htmlFor={`platform-${p.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {p.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <Button 
+                <Button
                   onClick={handleSearch}
                   className={viewMode === 'search' ? '' : 'bg-primary'}
                 >
                   <Search className="h-4 w-4 mr-2" />
-                  Search
+                  Apply Filters
                 </Button>
-                <Button 
+                <Button
                   variant={viewMode === 'viewAll' ? 'default' : 'outline'}
                   onClick={() => handleViewModeChange('viewAll')}
                 >
                   <Users className="h-4 w-4 mr-2" />
                   View All
                 </Button>
-                {/* <Button 
-                  variant={viewMode === 'top' ? 'default' : 'outline'}
-                  onClick={() => handleViewModeChange('top')}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Top Performers
-                </Button> */}
+                {(selectedPlatforms.length > 0 || niche || location) && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedPlatforms([]);
+                      setNiche("");
+                      setLocation("");
+                      setPage(1);
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

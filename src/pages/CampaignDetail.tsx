@@ -498,10 +498,10 @@ export const CampaignDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Campaign Influencers with Generate Link */}
+              {/* Shortlisted Influencers with Generate Link */}
               <Card>
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-sm font-medium">Campaign Influencers</CardTitle>
+                  <CardTitle className="text-sm font-medium">Shortlisted Influencers</CardTitle>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/influencers?campaign=${campaign._id}`}>
                       <Users className="h-3 w-3 mr-1" />
@@ -598,7 +598,7 @@ export const CampaignDetail = () => {
                               ) : (
                                 <>
                                   <LinkIcon className="h-3.5 w-3.5" />
-                                  <span className="hidden sm:inline">Generate Link</span>
+                                  <span className="hidden sm:inline">Generate Tracking Link</span>
                                 </>
                               )}
                             </Button>
@@ -794,8 +794,8 @@ export const CampaignDetail = () => {
                 </h4>
                 <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
                   <li>Send this link to {selectedInfluencer.name}</li>
-                  <li>They'll submit their social media post URLs through this link</li>
-                  <li>Review submissions in Performance Tracking</li>
+                  <li>They will submit their social media post/s URLs through this link</li>
+                  <li>You will review submissions in Performance Tracking (you will be notified by email once the link has been submitted)</li>
                   <li>Approve posts to track their metrics</li>
                 </ol>
               </div>

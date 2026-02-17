@@ -15,7 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Target, Users, FileText, Loader2, Link2, Plus, X } from "lucide-react";
+import { ArrowLeft, Target, Users, FileText, Loader2, Link2, Plus, X, HelpCircle, DollarSign } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { campaignsAPI, Campaign } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,11 +33,20 @@ const OBJECTIVES = [
   { value: "traffic", label: "Traffic" },
 ];
 const CAMPAIGN_TYPES = [
-  { value: "sponsored_post", label: "Sponsored Post" },
-  { value: "product_review", label: "Product Review" },
-  { value: "giveaway", label: "Giveaway" },
-  { value: "brand_ambassador", label: "Brand Ambassador" },
-  { value: "affiliate", label: "Affiliate" },
+  { value: "sponsored_post", label: "Sponsored Post", description: "Influencer creates content featuring your product/service" },
+  { value: "product_review", label: "Product Review", description: "Influencer reviews your product with honest feedback" },
+  { value: "giveaway", label: "Giveaway", description: "Influencer hosts a giveaway to engage their audience" },
+  { value: "brand_ambassador", label: "Brand Ambassador", description: "Long-term partnership representing your brand" },
+  { value: "affiliate", label: "Affiliate", description: "Commission-based promotion with trackable links" },
+];
+
+const CURRENCIES = [
+  { value: "USD", symbol: "$", label: "USD" },
+  { value: "EUR", symbol: "€", label: "EUR" },
+  { value: "GBP", symbol: "£", label: "GBP" },
+  { value: "ZAR", symbol: "R", label: "ZAR" },
+  { value: "INR", symbol: "₹", label: "INR" },
+  { value: "AUD", symbol: "A$", label: "AUD" },
 ];
 
 interface FormData {
@@ -40,11 +54,13 @@ interface FormData {
   description: string;
   objective: string;
   campaignType: string;
+  currency: string;
   budget: string;
   startDate: string;
   endDate: string;
   targetPlatforms: string[];
   productUrls: string[];
+  creatorBrief: string;
 }
 
 export const CreateCampaign = () => {
@@ -61,12 +77,16 @@ export const CreateCampaign = () => {
     description: "",
     objective: "",
     campaignType: "",
+    currency: "USD",
     budget: "",
-    startDate: "",
+    startDate: new Date().toISOString().split("T")[0], // Default to today
     endDate: "",
     targetPlatforms: [],
     productUrls: [],
+    creatorBrief: "",
   });
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (id) fetchCampaign();
@@ -88,17 +108,30 @@ export const CreateCampaign = () => {
       description: c.description || "",
       objective: c.objective || "",
       campaignType: c.campaignType || "",
+      currency: (c as any).currency || "USD",
       budget: c.budget?.total?.toString() || "",
-      startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "",
+      startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
       targetPlatforms: c.targetPlatforms || [],
       productUrls: c.productUrls || [],
+      creatorBrief: (c as any).creatorBrief || "",
     });
     setFetching(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setHasUnsavedChanges(true);
+  };
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
+        navigate("/campaigns");
+      }
+    } else {
+      navigate("/campaigns");
+    }
   };
 
   const togglePlatform = (platform: string) => {
@@ -194,7 +227,7 @@ export const CreateCampaign = () => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/campaigns")}>
+              <Button variant="ghost" size="icon" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
@@ -241,7 +274,7 @@ export const CreateCampaign = () => {
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      placeholder="Describe your campaign goals..."
+                      placeholder="Provide a simple campaign overview, e.g. The focus of this campaign is to introduce consumers to Company X's Black Friday deals"
                       rows={3}
                       className="resize-none"
                     />
@@ -266,17 +299,36 @@ export const CreateCampaign = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Campaign Type</Label>
+                      <Label className="text-xs flex items-center gap-1">
+                        Campaign Type
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="font-medium mb-1">Campaign Types:</p>
+                            <ul className="text-xs space-y-1">
+                              {CAMPAIGN_TYPES.map((t) => (
+                                <li key={t.value}><strong>{t.label}:</strong> {t.description}</li>
+                              ))}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
                       <Select
                         value={formData.campaignType}
-                        onValueChange={(v) => setFormData({ ...formData, campaignType: v })}
+                        onValueChange={(v) => { setFormData({ ...formData, campaignType: v }); setHasUnsavedChanges(true); }}
                       >
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
                           {CAMPAIGN_TYPES.map((t) => (
-                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                            <SelectItem key={t.value} value={t.value}>
+                              <div>
+                                <span>{t.label}</span>
+                              </div>
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -318,17 +370,34 @@ export const CreateCampaign = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Total Budget ($)</Label>
-                    <Input
-                      name="budget"
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={formData.budget}
-                      onChange={handleChange}
-                      placeholder="5000"
-                      className="h-9"
-                    />
+                    <Label className="text-xs">Total Budget</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.currency}
+                        onValueChange={(v) => { setFormData({ ...formData, currency: v }); setHasUnsavedChanges(true); }}
+                      >
+                        <SelectTrigger className="h-9 w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CURRENCIES.map((c) => (
+                            <SelectItem key={c.value} value={c.value}>
+                              {c.symbol} {c.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        name="budget"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={formData.budget}
+                        onChange={handleChange}
+                        placeholder="e.g. 5000"
+                        className="h-9 flex-1"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -393,6 +462,36 @@ export const CreateCampaign = () => {
                   <Plus className="h-4 w-4 mr-1" />
                   Add Product URL
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Creator Brief */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Creator Brief
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Provide guidelines and key information for influencers about this campaign.
+                </p>
+                <Textarea
+                  name="creatorBrief"
+                  value={formData.creatorBrief}
+                  onChange={handleChange}
+                  placeholder="Enter the creator brief here...
+
+Example:
+- Key messaging points
+- Brand voice and tone guidelines
+- Required hashtags and mentions
+- Content do's and don'ts
+- Deliverable specifications"
+                  rows={8}
+                  className="resize-none"
+                />
               </CardContent>
             </Card>
 

@@ -217,7 +217,7 @@ export const Dashboard = () => {
             <div>
                <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Welcome back, {userName}! 👋</h1>
                <div className="flex items-center gap-2">
-                 <h1 className="text-3xl md:text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold tracking-tight">Dashboard</h1>
+                 <h1 className="text-3xl md:text-4xl text-gray-900 font-bold tracking-tight">Dashboard</h1>
                </div>
                <p className="text-base md:text-lg text-muted-foreground mt-2">Here's what's happening with your influencer campaigns today.</p>
             </div>

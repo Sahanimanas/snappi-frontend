@@ -22,6 +22,8 @@ import {
   Eye,
   Download,
   ChevronRight,
+  Trash2,
+  UserSearch,
 } from "lucide-react";
 import { campaignsAPI, Campaign, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -146,6 +148,21 @@ export const Campaigns = () => {
     }
   };
 
+  const handleDelete = async (e: React.MouseEvent, campaign: Campaign) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to delete "${campaign.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    const result = await campaignsAPI.delete(campaign._id);
+
+    if (!result.success) {
+      toast({ title: "Error", description: "Failed to delete campaign.", variant: "destructive" });
+    } else {
+      setCampaigns((prev) => prev.filter((c) => c._id !== campaign._id));
+      toast({ title: "Deleted", description: `${campaign.name} has been deleted` });
+    }
+  };
+
   const handleCardClick = (campaignId: string) => {
     navigate(`/campaigns/${campaignId}`);
   };
@@ -258,6 +275,7 @@ export const Campaigns = () => {
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-muted-foreground">Platforms:</span>
                                 {campaign.targetPlatforms?.slice(0, 5).map((p: string) => (
                                   <PlatformIcon key={p} platform={p} className="h-4 w-4 opacity-70" />
                                 ))}
@@ -295,7 +313,7 @@ export const Campaigns = () => {
                               </p>
                             </div>
                             <div className="text-center min-w-[100px]">
-                              <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                              <p className="text-xs text-muted-foreground mb-1">Campaign Dates</p>
                               <p className="font-semibold text-sm">
                                 {campaign.startDate
                                   ? new Date(campaign.startDate).toLocaleDateString("en-US", {
@@ -346,8 +364,24 @@ export const Campaigns = () => {
                                 >
                                   Edit Campaign
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/search?campaign=${campaign._id}`);
+                                  }}
+                                >
+                                  <UserSearch className="h-4 w-4 mr-2" />
+                                  Search Influencers
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={(e) => handleComplete(e, campaign)}>
                                   Mark as Completed
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => handleDelete(e, campaign)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Campaign
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
