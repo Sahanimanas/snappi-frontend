@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,9 +33,18 @@ import {
   CheckCircle,
   XCircle,
   MessageSquare,
+  User,
 } from "lucide-react";
-import { contractsAPI, Contract } from "@/lib/contractApi";
+import { contractsAPI, Contract, SentContract } from "@/lib/contractApi";
 import { useToast } from "@/hooks/use-toast";
+
+type Tab = "sent" | "templates";
+
+interface FlatSentContract {
+  contractId: string;
+  contractTitle: string;
+  sentContract: SentContract;
+}
 
 export const Contracts = () => {
   const navigate = useNavigate();
@@ -44,6 +53,7 @@ export const Contracts = () => {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("sent");
 
   useEffect(() => {
     fetchContracts();
@@ -67,19 +77,11 @@ export const Contracts = () => {
     setDeleteId(null);
 
     if (result.success) {
-      toast({ title: "Deleted", description: "Contract deleted successfully" });
+      toast({ title: "Deleted", description: "Contract template deleted successfully" });
       setContracts(contracts.filter(c => c._id !== deleteId));
     } else {
       toast({ title: "Error", description: result.message || "Failed to delete", variant: "destructive" });
     }
-  };
-
-  const getStatusCounts = (contract: Contract) => {
-    const counts = { pending: 0, accepted: 0, rejected: 0, connected: 0 };
-    contract.sentContracts.forEach(sc => {
-      counts[sc.status]++;
-    });
-    return counts;
   };
 
   const getStatusBadge = (status: string) => {
@@ -94,6 +96,19 @@ export const Contracts = () => {
         return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
     }
   };
+
+  // Flatten all sent contracts from all templates into individual entries
+  const allSentContracts: FlatSentContract[] = contracts.flatMap(contract =>
+    contract.sentContracts.map(sc => ({
+      contractId: contract._id,
+      contractTitle: contract.title,
+      sentContract: sc,
+    }))
+  ).sort((a, b) => new Date(b.sentContract.sentAt).getTime() - new Date(a.sentContract.sentAt).getTime());
+
+  const totalSent = allSentContracts.length;
+  const totalAccepted = allSentContracts.filter(s => s.sentContract.status === 'accepted').length;
+  const totalPending = allSentContracts.filter(s => s.sentContract.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -123,7 +138,7 @@ export const Contracts = () => {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Total Contracts</span>
+                  <span className="text-sm text-muted-foreground">Templates</span>
                 </div>
                 <p className="text-2xl font-bold mt-1">{contracts.length}</p>
               </CardContent>
@@ -134,9 +149,7 @@ export const Contracts = () => {
                   <Send className="h-4 w-4 text-blue-500" />
                   <span className="text-sm text-muted-foreground">Sent</span>
                 </div>
-                <p className="text-2xl font-bold mt-1">
-                  {contracts.reduce((sum, c) => sum + c.sentContracts.length, 0)}
-                </p>
+                <p className="text-2xl font-bold mt-1">{totalSent}</p>
               </CardContent>
             </Card>
             <Card>
@@ -145,9 +158,7 @@ export const Contracts = () => {
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-muted-foreground">Accepted</span>
                 </div>
-                <p className="text-2xl font-bold mt-1">
-                  {contracts.reduce((sum, c) => sum + c.sentContracts.filter(sc => sc.status === 'accepted').length, 0)}
-                </p>
+                <p className="text-2xl font-bold mt-1">{totalAccepted}</p>
               </CardContent>
             </Card>
             <Card>
@@ -156,39 +167,128 @@ export const Contracts = () => {
                   <Clock className="h-4 w-4 text-yellow-500" />
                   <span className="text-sm text-muted-foreground">Pending</span>
                 </div>
-                <p className="text-2xl font-bold mt-1">
-                  {contracts.reduce((sum, c) => sum + c.sentContracts.filter(sc => sc.status === 'pending').length, 0)}
-                </p>
+                <p className="text-2xl font-bold mt-1">{totalPending}</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Contracts List */}
+          {/* Tabs */}
+          <div className="flex items-center gap-1 border-b">
+            <button
+              onClick={() => setActiveTab("sent")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "sent"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sent Contracts
+              {totalSent > 0 && (
+                <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{totalSent}</span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("templates")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "templates"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Templates
+              <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">{contracts.length}</span>
+            </button>
+          </div>
+
+          {/* Content */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : contracts.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No contracts yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first contract to send to influencers
-                </p>
-                <Button asChild>
-                  <Link to="/contracts/create">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Contract
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+          ) : activeTab === "sent" ? (
+            /* Sent Contracts Tab */
+            allSentContracts.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No contracts sent yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Send a contract to an influencer from a campaign to see it here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {allSentContracts.map((item, idx) => {
+                  const sc = item.sentContract;
+                  const influencerName = typeof sc.influencer === 'object' ? sc.influencer.name : (sc.influencerName || 'Unknown');
+                  const influencerImage = typeof sc.influencer === 'object' ? sc.influencer.profileImage : undefined;
+                  const campaignName = typeof sc.campaign === 'object' ? sc.campaign.name : sc.campaignName;
+
+                  return (
+                    <Card key={sc._id || idx} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Influencer Avatar */}
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {influencerImage ? (
+                                <img src={influencerImage} alt={influencerName} className="h-full w-full object-cover" />
+                              ) : (
+                                <User className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="font-semibold truncate">{influencerName}</span>
+                                {getStatusBadge(sc.status)}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="truncate">{item.contractTitle}</span>
+                                {campaignName && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="truncate">{campaignName}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            <span className="text-xs text-muted-foreground hidden sm:block">
+                              {new Date(sc.sentAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )
           ) : (
-            <div className="space-y-3">
-              {contracts.map((contract) => {
-                const statusCounts = getStatusCounts(contract);
-                return (
+            /* Templates Tab */
+            contracts.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No templates yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first contract template to send to influencers
+                  </p>
+                  <Button asChild>
+                    <Link to="/contracts/create">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Contract
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {contracts.map((contract) => (
                   <Card key={contract._id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
@@ -201,26 +301,13 @@ export const Contracts = () => {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                             {contract.content.substring(0, 150)}
                             {contract.content.length > 150 && '...'}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>Created {new Date(contract.createdAt).toLocaleDateString()}</span>
-                            {contract.sentContracts.length > 0 && (
-                              <div className="flex items-center gap-2">
-                                {statusCounts.accepted > 0 && (
-                                  <span className="text-green-600">{statusCounts.accepted} accepted</span>
-                                )}
-                                {statusCounts.pending > 0 && (
-                                  <span className="text-yellow-600">{statusCounts.pending} pending</span>
-                                )}
-                                {statusCounts.rejected > 0 && (
-                                  <span className="text-red-600">{statusCounts.rejected} rejected</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            Created {new Date(contract.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -243,40 +330,11 @@ export const Contracts = () => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-
-                      {/* Sent Contracts List */}
-                      {contract.sentContracts.length > 0 && (
-                        <div className="mt-4 pt-4 border-t">
-                          <p className="text-xs font-medium text-muted-foreground mb-2">Recent Recipients</p>
-                          <div className="space-y-2">
-                            {contract.sentContracts.slice(0, 3).map((sc, idx) => (
-                              <div key={idx} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">
-                                    {typeof sc.influencer === 'object' ? sc.influencer.name : sc.influencerName}
-                                  </span>
-                                  {sc.campaignName && (
-                                    <span className="text-muted-foreground text-xs">
-                                      ({sc.campaignName})
-                                    </span>
-                                  )}
-                                </div>
-                                {getStatusBadge(sc.status)}
-                              </div>
-                            ))}
-                            {contract.sentContracts.length > 3 && (
-                              <p className="text-xs text-muted-foreground">
-                                +{contract.sentContracts.length - 3} more
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </main>
       </div>
@@ -287,7 +345,7 @@ export const Contracts = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contract?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this contract and all its sent records.
+              This will permanently delete this contract template and all its sent records.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -421,8 +421,8 @@ export const CreateCampaign = () => {
               </Card>
             </div>
 
-            {/* Product URLs */}
-            <Card>
+            {/* Product URLs - Only shown for Affiliate campaigns */}
+            {formData.campaignType === "affiliate" && <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Link2 className="h-4 w-4" />
@@ -463,7 +463,7 @@ export const CreateCampaign = () => {
                   Add Product URL
                 </Button>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* Creator Brief */}
             <Card>

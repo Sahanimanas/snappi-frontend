@@ -1,14 +1,22 @@
 // pages/SearchInfluencers.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddToCampaignDialog } from "@/components/AddToCampaignDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Search,
   Users,
@@ -20,9 +28,13 @@ import {
   Filter,
   Sparkles,
   MapPin,
-  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  X,
+  TrendingUp,
+  Star,
 } from "lucide-react";
-import { influencersAPI, Influencer, Platform, formatNumber } from "@/lib/api";
+import { influencersAPI, Influencer, Platform, SearchFilters, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // Platform Icon with Link
@@ -97,13 +109,30 @@ const PlatformIconLink = ({ platform }: { platform: Platform }) => {
   );
 };
 
+// Match Score Badge
+const MatchScoreBadge = ({ score }: { score: number }) => {
+  const getColor = () => {
+    if (score >= 80) return "bg-green-100 text-green-700 border-green-200";
+    if (score >= 60) return "bg-blue-100 text-blue-700 border-blue-200";
+    if (score >= 40) return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    return "bg-gray-100 text-gray-600 border-gray-200";
+  };
+
+  return (
+    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${getColor()}`}>
+      <Star className="h-3 w-3" />
+      {score}% match
+    </div>
+  );
+};
+
 // Influencer Card Component
 const InfluencerCard = ({
   influencer,
   onAddToShortlist,
   onContact,
 }: {
-  influencer: Influencer;
+  influencer: Influencer & { matchScore?: number };
   onAddToShortlist: (inf: Influencer) => void;
   onContact: (inf: Influencer) => void;
 }) => {
@@ -122,10 +151,21 @@ const InfluencerCard = ({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+                {(influencer as any).matchScore > 0 && (
+                  <MatchScoreBadge score={(influencer as any).matchScore} />
+                )}
+              </div>
               {primaryKeyword && (
                 <p className="text-sm text-muted-foreground">
                   {primaryKeyword.displayName || primaryKeyword.name}
+                </p>
+              )}
+              {influencer.location?.country && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  {[influencer.location.city, influencer.location.country].filter(Boolean).join(", ")}
                 </p>
               )}
             </div>
@@ -151,6 +191,14 @@ const InfluencerCard = ({
               </p>
               <p className="text-xs text-muted-foreground">Platforms</p>
             </div>
+            {/* Platform Icons */}
+            {influencer.platforms && influencer.platforms.length > 0 && (
+              <div className="flex items-center gap-2">
+                {influencer.platforms.map((p, idx) => (
+                  <PlatformIconLink key={idx} platform={p} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -169,27 +217,53 @@ const InfluencerCard = ({
   );
 };
 
+// Follower range presets
+const FOLLOWER_PRESETS = [
+  { label: "Any", min: undefined, max: undefined },
+  { label: "Nano (1K-10K)", min: 1000, max: 10000 },
+  { label: "Micro (10K-50K)", min: 10000, max: 50000 },
+  { label: "Mid-tier (50K-500K)", min: 50000, max: 500000 },
+  { label: "Macro (500K-1M)", min: 500000, max: 1000000 },
+  { label: "Mega (1M+)", min: 1000000, max: undefined },
+];
+
 export const SearchInfluencers = () => {
   const { toast } = useToast();
 
-  // View mode: 'search' | 'viewAll' | 'top'
-  const [viewMode, setViewMode] = useState<'search' | 'viewAll' | 'top'>('search');
-
   // Data state
-  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [influencers, setInfluencers] = useState<(Influencer & { matchScore?: number })[]>([]);
   const [loading, setLoading] = useState(false);
-  const [shortlist, setShortlist] = useState<Influencer[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const LIMIT = 20;
+  const totalPages = Math.ceil(total / LIMIT);
 
-  // Filters
+  // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [niche, setNiche] = useState("");
   const [location, setLocation] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [minFollowers, setMinFollowers] = useState<string>("");
+  const [maxFollowers, setMaxFollowers] = useState<string>("");
+  const [minEngagement, setMinEngagement] = useState<string>("");
+  const [maxEngagement, setMaxEngagement] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("followers");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Suggestions
+  const [suggestions, setSuggestions] = useState<{ names: string[]; niches: string[]; categories: string[] }>({ names: [], niches: [], categories: [] });
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Campaign Dialog
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [selectedInfluencer, setSelectedInfluencer] = useState<{id: string; name: string} | null>(null);
 
   // Available platforms for multi-select
   const PLATFORMS = [
@@ -209,73 +283,121 @@ export const SearchInfluencers = () => {
         ? prev.filter(p => p !== platformId)
         : [...prev, platformId]
     );
-    setPage(1);
   };
 
-  // Campaign Dialog
-  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
-  const [selectedInfluencer, setSelectedInfluencer] = useState<{id: string; name: string} | null>(null);
+  // Fetch suggestions as user types
+  const fetchSuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions({ names: [], niches: [], categories: [] });
+      return;
+    }
+    const result = await influencersAPI.getSearchSuggestions(query);
+    if (result.success && result.data) {
+      setSuggestions(result.data);
+    }
+  };
 
-  // Fetch influencers based on view mode
-  const fetchInfluencers = async () => {
+  const handleSearchInputChange = (value: string) => {
+    setSearchTerm(value);
+    if (suggestionsTimeout.current) clearTimeout(suggestionsTimeout.current);
+    suggestionsTimeout.current = setTimeout(() => {
+      fetchSuggestions(value);
+      setShowSuggestions(true);
+    }, 300);
+  };
+
+  const applySuggestion = (value: string) => {
+    setSearchTerm(value);
+    setShowSuggestions(false);
+    // Trigger search immediately
+    performSearch(value);
+  };
+
+  // Core search function using POST /api/influencers/search
+  const performSearch = async (overrideSearch?: string, overridePage?: number) => {
     setLoading(true);
+    setHasSearched(true);
+    setShowSuggestions(false);
 
-    // Build search query combining search term and niche for AI-like search
-    const searchQuery = [searchTerm, niche].filter(Boolean).join(" ");
+    const currentPage = overridePage ?? page;
 
-    if (viewMode === 'top') {
-      const result = await influencersAPI.getTopByEngagement({
-        platform: selectedPlatforms.length === 1 ? selectedPlatforms[0] : undefined,
-        limit: 20,
-      });
-      if (result.success) {
-        const data = Array.isArray(result.data) ? result.data : [];
-        setInfluencers(data);
-        setTotal(data.length);
-        setTotalPages(1);
-      }
+    const filters: SearchFilters = {
+      search: (overrideSearch ?? searchTerm) || undefined,
+      platforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
+      niche: niche || undefined,
+      location: location || undefined,
+      keywords: keywords || undefined,
+      minFollowers: minFollowers ? parseInt(minFollowers) : undefined,
+      maxFollowers: maxFollowers ? parseInt(maxFollowers) : undefined,
+      minEngagement: minEngagement ? parseFloat(minEngagement) : undefined,
+      maxEngagement: maxEngagement ? parseFloat(maxEngagement) : undefined,
+      sortBy,
+      sortOrder,
+      limit: LIMIT,
+      skip: (currentPage - 1) * LIMIT,
+    };
+
+    const result = await influencersAPI.search(filters);
+
+    if (result.success && result.data) {
+      setInfluencers(result.data);
+      setTotal(result.total || result.count || result.data.length);
     } else {
-      const result = await influencersAPI.getAll({
-        page,
-        limit: 20,
-        search: searchQuery || undefined,
-        platform: selectedPlatforms.length === 1 ? selectedPlatforms[0] : undefined,
-        country: location || undefined,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      });
-
-      if (result.success) {
-        const data = Array.isArray(result.data) ? result.data : [];
-        setInfluencers(data);
-        setTotal(result.total || data.length);
-        setTotalPages(result.totalPages || 1);
-      }
+      setInfluencers([]);
+      setTotal(0);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchInfluencers();
-  }, [viewMode, page, selectedPlatforms, location]);
-
-  // Handlers
+  // Handle search form submit
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchInfluencers();
+    performSearch(undefined, 1);
   };
 
-  const handleViewModeChange = (mode: 'search' | 'viewAll' | 'top') => {
-    setViewMode(mode);
-    setPage(1);
-  };
-
+  // Handle page change
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    performSearch(undefined, newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Apply follower preset
+  const applyFollowerPreset = (preset: typeof FOLLOWER_PRESETS[0]) => {
+    setMinFollowers(preset.min?.toString() || "");
+    setMaxFollowers(preset.max?.toString() || "");
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedPlatforms([]);
+    setNiche("");
+    setLocation("");
+    setKeywords("");
+    setMinFollowers("");
+    setMaxFollowers("");
+    setMinEngagement("");
+    setMaxEngagement("");
+    setSortBy("followers");
+    setSortOrder("desc");
+    setPage(1);
+  };
+
+  // Count active filters
+  const activeFilterCount = [
+    selectedPlatforms.length > 0,
+    niche,
+    location,
+    keywords,
+    minFollowers,
+    maxFollowers,
+    minEngagement,
+    maxEngagement,
+  ].filter(Boolean).length;
+
+  // Handlers
   const handleAddToShortlist = (influencer: Influencer) => {
     setSelectedInfluencer({ id: influencer._id, name: influencer.name });
     setCampaignDialogOpen(true);
@@ -297,6 +419,11 @@ export const SearchInfluencers = () => {
     window.open(gmailUrl, "_blank");
   };
 
+  // Load initial results on mount
+  useEffect(() => {
+    performSearch(undefined, 1);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
@@ -304,7 +431,7 @@ export const SearchInfluencers = () => {
         <Sidebar />
 
         <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto">
-          {/* AI-Powered Search Bar - KEY FEATURE */}
+          {/* AI-Powered Search Bar */}
           <Card className="shadow-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50/50 to-white">
             <CardContent className="p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -312,16 +439,19 @@ export const SearchInfluencers = () => {
                 <h2 className="text-xl font-bold">AI-Powered Influencer Search</h2>
               </div>
               <p className="text-muted-foreground mb-6">
-                Search using natural language like "health influencer male" or "fashion blogger female India"
+                Describe who you're looking for — e.g. <span className="font-medium text-foreground">"health influencer male"</span>, <span className="font-medium text-foreground">"fashion blogger female India"</span>, <span className="font-medium text-foreground">"tech reviewer with 100K+ followers"</span>
               </p>
               <form onSubmit={handleSearch}>
                 <div className="relative">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-500" />
                   <Input
-                    placeholder="e.g., health influencer male, fashion blogger, tech reviewer..."
+                    ref={searchInputRef}
+                    placeholder="e.g., health influencer male, fitness blogger, beauty guru, food vlogger..."
                     className="pl-14 h-16 text-lg border-2 border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 shadow-lg shadow-blue-100 rounded-xl"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onFocus={() => suggestions.names.length > 0 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   />
                   <Button
                     type="submit"
@@ -331,90 +461,155 @@ export const SearchInfluencers = () => {
                     <Search className="h-5 w-5 mr-2" />
                     Search
                   </Button>
+
+                  {/* Autocomplete Suggestions */}
+                  {showSuggestions && (suggestions.names.length > 0 || suggestions.niches.length > 0 || suggestions.categories.length > 0) && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                      {suggestions.niches.length > 0 && (
+                        <div className="px-3 py-2">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Niches</p>
+                          {suggestions.niches.map((n, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="block w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 rounded transition-colors"
+                              onMouseDown={() => applySuggestion(n)}
+                            >
+                              <Sparkles className="h-3 w-3 inline mr-2 text-blue-500" />
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {suggestions.categories.length > 0 && (
+                        <div className="px-3 py-2 border-t">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Categories</p>
+                          {suggestions.categories.map((c, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="block w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 rounded transition-colors"
+                              onMouseDown={() => applySuggestion(c)}
+                            >
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {suggestions.names.length > 0 && (
+                        <div className="px-3 py-2 border-t">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Influencers</p>
+                          {suggestions.names.map((name, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="block w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 rounded transition-colors"
+                              onMouseDown={() => applySuggestion(name)}
+                            >
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </form>
             </CardContent>
           </Card>
 
-          {/* Search Filters Card */}
+          {/* Filters Card */}
           <Card className="shadow-sm">
             <CardContent className="p-6">
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Filters</h2>
+              {/* Header with toggle */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  {activeFilterCount > 0 && (
+                    <Badge className="bg-blue-100 text-blue-700">{activeFilterCount} active</Badge>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                >
+                  {showAdvancedFilters ? "Hide" : "Show"} Advanced Filters
+                  {showAdvancedFilters ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+                </Button>
               </div>
 
-              {/* Filter Fields */}
+              {/* Basic Filters - Always Visible */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Niche/Category - Open text field */}
+                {/* Niche/Category */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                      </svg>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <div className="w-7 h-7 rounded bg-purple-100 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-purple-600" />
                     </div>
-                    <span className="text-sm font-medium">Niche / Category</span>
-                  </div>
+                    Niche / Category
+                  </Label>
                   <Input
                     placeholder="e.g., fitness, tech, beauty, gaming..."
                     className="h-10"
                     value={niche}
-                    onChange={(e) => { setNiche(e.target.value); }}
+                    onChange={(e) => setNiche(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                   />
                 </div>
 
-                {/* Location - Open text field */}
+                {/* Location */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                      <MapPin className="h-4 w-4" />
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <div className="w-7 h-7 rounded bg-green-100 flex items-center justify-center">
+                      <MapPin className="h-3.5 w-3.5 text-green-600" />
                     </div>
-                    <span className="text-sm font-medium">Location</span>
-                  </div>
+                    Location
+                  </Label>
                   <Input
-                    placeholder="e.g., USA, India, London, South Africa..."
+                    placeholder="e.g., USA, India, London..."
                     className="h-10"
                     value={location}
-                    onChange={(e) => { setLocation(e.target.value); }}
+                    onChange={(e) => setLocation(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                   />
                 </div>
 
-                {/* Shortlist */}
+                {/* Keywords */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4" />
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <div className="w-7 h-7 rounded bg-orange-100 flex items-center justify-center">
+                      <Search className="h-3.5 w-3.5 text-orange-600" />
                     </div>
-                    <span className="text-sm font-medium">Shortlist</span>
-                  </div>
-                  <Button variant="outline" className="w-full h-10 justify-start">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    View Shortlist ({shortlist.length})
-                  </Button>
+                    Keywords
+                  </Label>
+                  <Input
+                    placeholder="e.g., vegan, sustainable, luxury..."
+                    className="h-10"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
                 </div>
               </div>
 
               {/* Platform Multi-Select */}
               <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded bg-blue-100 flex items-center justify-center">
+                    <svg className="h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
                       <line x1="12" y1="18" x2="12" y2="18"/>
                     </svg>
                   </div>
-                  <span className="text-sm font-medium">Platforms</span>
+                  Platforms
                   {selectedPlatforms.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-1">
                       {selectedPlatforms.length} selected
                     </Badge>
                   )}
-                </div>
+                </Label>
                 <div className="flex flex-wrap gap-4">
                   {PLATFORMS.map((p) => (
                     <div key={p.id} className="flex items-center space-x-2">
@@ -434,32 +629,142 @@ export const SearchInfluencers = () => {
                 </div>
               </div>
 
+              {/* Advanced Filters - Collapsible */}
+              {showAdvancedFilters && (
+                <div className="border-t pt-6 mb-6 space-y-6">
+                  {/* Follower Range */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded bg-indigo-100 flex items-center justify-center">
+                        <Users className="h-3.5 w-3.5 text-indigo-600" />
+                      </div>
+                      Follower Count
+                    </Label>
+                    {/* Quick presets */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {FOLLOWER_PRESETS.map((preset) => {
+                        const isActive =
+                          (preset.min?.toString() || "") === minFollowers &&
+                          (preset.max?.toString() || "") === maxFollowers;
+                        return (
+                          <Button
+                            key={preset.label}
+                            type="button"
+                            variant={isActive ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => applyFollowerPreset(preset)}
+                          >
+                            {preset.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    {/* Custom range */}
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        placeholder="Min followers"
+                        className="h-9 w-40"
+                        value={minFollowers}
+                        onChange={(e) => setMinFollowers(e.target.value)}
+                      />
+                      <span className="text-muted-foreground text-sm">to</span>
+                      <Input
+                        type="number"
+                        placeholder="Max followers"
+                        className="h-9 w-40"
+                        value={maxFollowers}
+                        onChange={(e) => setMaxFollowers(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Engagement Range */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded bg-emerald-100 flex items-center justify-center">
+                        <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                      </div>
+                      Engagement Rate (%)
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="Min %"
+                        className="h-9 w-40"
+                        value={minEngagement}
+                        onChange={(e) => setMinEngagement(e.target.value)}
+                      />
+                      <span className="text-muted-foreground text-sm">to</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="Max %"
+                        className="h-9 w-40"
+                        value={maxEngagement}
+                        onChange={(e) => setMaxEngagement(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Tip: 1-3% is average, 3-6% is good, 6%+ is excellent
+                    </p>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Sort By</Label>
+                      <Select value={sortBy} onValueChange={(v) => setSortBy(v)}>
+                        <SelectTrigger className="w-44 h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="followers">Followers</SelectItem>
+                          <SelectItem value="engagement">Engagement</SelectItem>
+                          <SelectItem value="rating">Rating</SelectItem>
+                          <SelectItem value="totalCollaborations">Collaborations</SelectItem>
+                          <SelectItem value="createdAt">Newest</SelectItem>
+                          <SelectItem value="name">Name</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Order</Label>
+                      <Select value={sortOrder} onValueChange={(v: "asc" | "desc") => setSortOrder(v)}>
+                        <SelectTrigger className="w-36 h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="desc">High to Low</SelectItem>
+                          <SelectItem value="asc">Low to High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <Button
-                  onClick={handleSearch}
-                  className={viewMode === 'search' ? '' : 'bg-primary'}
-                >
+                <Button onClick={handleSearch}>
                   <Search className="h-4 w-4 mr-2" />
                   Apply Filters
                 </Button>
                 <Button
-                  variant={viewMode === 'viewAll' ? 'default' : 'outline'}
-                  onClick={() => handleViewModeChange('viewAll')}
+                  variant="outline"
+                  onClick={() => { clearAllFilters(); performSearch("", 1); }}
                 >
                   <Users className="h-4 w-4 mr-2" />
                   View All
                 </Button>
-                {(selectedPlatforms.length > 0 || niche || location) && (
+                {activeFilterCount > 0 && (
                   <Button
                     variant="ghost"
-                    onClick={() => {
-                      setSelectedPlatforms([]);
-                      setNiche("");
-                      setLocation("");
-                      setPage(1);
-                    }}
+                    onClick={clearAllFilters}
                   >
+                    <X className="h-4 w-4 mr-1" />
                     Clear Filters
                   </Button>
                 )}
@@ -470,7 +775,9 @@ export const SearchInfluencers = () => {
           {/* Search Results */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Search Results</h2>
+              <h2 className="text-xl font-semibold">
+                {hasSearched ? "Search Results" : "All Influencers"}
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Showing {influencers.length} of {total} influencers
               </p>
@@ -485,7 +792,7 @@ export const SearchInfluencers = () => {
                 <CardContent className="py-16 text-center">
                   <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <p className="text-lg font-medium">No influencers found</p>
-                  <p className="text-muted-foreground">Try different search terms or filters</p>
+                  <p className="text-muted-foreground">Try different search terms or adjust your filters</p>
                 </CardContent>
               </Card>
             ) : (
@@ -503,7 +810,7 @@ export const SearchInfluencers = () => {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between border-t pt-6 mt-6">
                     <p className="text-sm text-muted-foreground">
-                      Page {page} of {totalPages}
+                      Page {page} of {totalPages} ({total} results)
                     </p>
                     <div className="flex gap-2">
                       <Button

@@ -187,6 +187,49 @@ export interface Keyword {
   createdAt: string;
 }
 
+// ==================== SEARCH TYPES ====================
+
+export interface SearchFilters {
+  search?: string;
+  platforms?: string[];
+  niche?: string;
+  location?: string;
+  keywords?: string;
+  minFollowers?: number;
+  maxFollowers?: number;
+  minEngagement?: number;
+  maxEngagement?: number;
+  campaignObjective?: 'awareness' | 'sales' | 'both';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  skip?: number;
+}
+
+export interface FilterOptions {
+  platforms: { value: string; count: number }[];
+  niches: { value: string; count: number }[];
+  categories: { value: string; count: number }[];
+  countries: { value: string; count: number }[];
+  followerRange: { minFollowers: number; maxFollowers: number; avgFollowers: number };
+  engagementRange: { minEngagement: number; maxEngagement: number; avgEngagement: number };
+}
+
+export interface SearchSuggestions {
+  names: string[];
+  niches: string[];
+  categories: string[];
+}
+
+export interface RecommendationParams {
+  campaignObjective?: 'awareness' | 'sales';
+  targetAudience?: string;
+  budget?: number;
+  platforms?: string[];
+  niche?: string;
+  limit?: number;
+}
+
 export interface Campaign {
   _id: string;
   name: string;
@@ -403,6 +446,28 @@ export const influencersAPI = {
   assignKeywords: async (id: string, keywordIds: string[]) => apiRequest<Influencer>(`/influencers/${id}/keywords`, { method: 'POST', body: JSON.stringify({ keywordIds }) }, true),
 
   removeKeywords: async (id: string, keywordIds: string[]) => apiRequest(`/influencers/${id}/keywords`, { method: 'DELETE', body: JSON.stringify({ keywordIds }) }, true),
+
+  // Advanced search using POST /api/influencers/search
+  search: async (filters: SearchFilters) =>
+    apiRequest<(Influencer & { matchScore?: number })[]>('/influencers/search', {
+      method: 'POST',
+      body: JSON.stringify(filters),
+    }),
+
+  // Autocomplete suggestions
+  getSearchSuggestions: async (query: string) =>
+    apiRequest<SearchSuggestions>(`/influencers/search/suggestions?q=${encodeURIComponent(query)}`, { method: 'GET' }),
+
+  // Filter options with counts
+  getFilterOptions: async () =>
+    apiRequest<FilterOptions>('/influencers/search/filters', { method: 'GET' }),
+
+  // AI-powered recommendations
+  getRecommendations: async (params: RecommendationParams) =>
+    apiRequest<(Influencer & { recommendationScore?: number })[]>('/influencers/search/recommendations', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }),
 
   getStats: async () => apiRequest<any>('/influencers/admin/stats', { method: 'GET' }, true),
 };
