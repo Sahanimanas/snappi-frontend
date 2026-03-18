@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Trash2,
   UserSearch,
+  X,
 } from "lucide-react";
 import { campaignsAPI, Campaign, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +69,9 @@ export const Campaigns = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCount, setActiveCount] = useState(0);
   const [totalBudget, setTotalBudget] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterPlatform, setFilterPlatform] = useState("");
+  const [filterObjective, setFilterObjective] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -116,7 +120,43 @@ export const Campaigns = () => {
         c.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    if (filterPlatform) {
+      filtered = filtered.filter((c) =>
+        c.targetPlatforms?.some((p: string) => p.toLowerCase() === filterPlatform.toLowerCase())
+      );
+    }
+    if (filterObjective) {
+      filtered = filtered.filter((c) =>
+        c.objective?.toLowerCase() === filterObjective.toLowerCase()
+      );
+    }
     return filtered;
+  };
+
+  const handleExportCampaigns = () => {
+    const csvRows = [
+      ['Name', 'Status', 'Objective', 'Budget', 'Spent', 'Platforms', 'Start Date', 'End Date', 'Influencers'],
+      ...campaigns.map((c) => [
+        c.name,
+        c.status,
+        c.objective || '',
+        c.budget?.total || 0,
+        c.budget?.spent || 0,
+        c.targetPlatforms?.join('; ') || '',
+        c.startDate ? new Date(c.startDate).toLocaleDateString() : '',
+        c.endDate ? new Date(c.endDate).toLocaleDateString() : '',
+        c.influencers?.length || c.influencerCount || 0,
+      ]),
+    ];
+    const csvContent = csvRows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'campaigns-export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "Campaigns exported as CSV" });
   };
 
   const handleStatusChange = async (e: React.MouseEvent, campaign: Campaign) => {
@@ -194,9 +234,9 @@ export const Campaigns = () => {
                   Create Campaign
                 </Link>
               </Button>
-              {/* <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleExportCampaigns} title="Export campaigns as CSV">
                 <Download className="h-5 w-5" />
-              </Button> */}
+              </Button>
             </div>
           </div>
 
@@ -222,21 +262,82 @@ export const Campaigns = () => {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="flex gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search campaigns..."
-                className="pl-11 h-11 text-base"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          {/* Search & Filters */}
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search campaigns..."
+                  className="pl-11 h-11 text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button
+                variant={showFilters ? "secondary" : "outline"}
+                size="lg"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="mr-2 h-5 w-5" />
+                Filter
+                {(filterPlatform || filterObjective) && (
+                  <Badge className="ml-2 bg-primary text-primary-foreground text-[10px] px-1.5">
+                    {[filterPlatform, filterObjective].filter(Boolean).length}
+                  </Badge>
+                )}
+              </Button>
             </div>
-            {/* <Button variant="outline" size="lg">
-              <Filter className="mr-2 h-5 w-5" />
-              Filter
-            </Button> */}
+
+            {showFilters && (
+              <div className="flex flex-wrap items-end gap-4 p-4 bg-muted/30 rounded-lg border">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Platform</label>
+                  <select
+                    title="Filter by platform"
+                    className="h-10 min-w-[160px] rounded-md border border-input bg-background px-3 text-sm"
+                    value={filterPlatform}
+                    onChange={(e) => setFilterPlatform(e.target.value)}
+                  >
+                    <option value="">All Platforms</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="twitter">Twitter/X</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="snapchat">Snapchat</option>
+                    <option value="threads">Threads</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Objective</label>
+                  <select
+                    title="Filter by objective"
+                    className="h-10 min-w-[180px] rounded-md border border-input bg-background px-3 text-sm"
+                    value={filterObjective}
+                    onChange={(e) => setFilterObjective(e.target.value)}
+                  >
+                    <option value="">All Objectives</option>
+                    <option value="brand_awareness">Brand Awareness</option>
+                    <option value="increase_sales">Increase Sales</option>
+                    <option value="engagement">Engagement</option>
+                    <option value="lead_generation">Lead Generation</option>
+                    <option value="traffic">Traffic</option>
+                  </select>
+                </div>
+                {(filterPlatform || filterObjective) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setFilterPlatform(""); setFilterObjective(""); }}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Tabs */}
@@ -293,7 +394,10 @@ export const Campaigns = () => {
                             <div className="text-center min-w-[80px]">
                               <p className="text-xs text-muted-foreground mb-1">Budget</p>
                               <p className="font-semibold text-base">
-                                ${campaign.budget?.total?.toLocaleString() || 0}
+                                {(campaign as any).currency && (campaign as any).currency !== 'USD'
+                                  ? `${(campaign as any).currency} `
+                                  : '$'}
+                                {campaign.budget?.total?.toLocaleString() || 0}
                               </p>
                             </div>
                             <div className="text-center min-w-[80px]">

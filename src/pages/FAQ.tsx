@@ -132,7 +132,7 @@ export const FAQ = () => {
             <Badge variant="secondary" className="mb-4">
               Help Center
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-gray-900 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900">
               Frequently Asked
               <br />
               Questions

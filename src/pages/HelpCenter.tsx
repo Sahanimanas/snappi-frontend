@@ -132,7 +132,7 @@ export const HelpCenter = () => {
         
         <main className="flex-1 p-6 space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Help Center</h1>
+            <h1 className="text-4xl text-gray-900 font-bold">Help Center</h1>
             <p className="text-muted-foreground text-lg">
               Find answers, get support, and learn how to make the most of Snappi
             </p>

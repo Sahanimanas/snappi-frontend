@@ -6,14 +6,15 @@ import { UpgradeCard } from "@/components/upgrade/UpgradeCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  Target, 
-  TrendingUp, 
+import {
+  Users,
+  Target,
+  TrendingUp,
   DollarSign,
   Plus,
   MessageSquare,
-  ExternalLink
+  ExternalLink,
+  Download
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -221,6 +222,46 @@ export const Dashboard = () => {
                </div>
                <p className="text-base md:text-lg text-muted-foreground mt-2">Here's what's happening with your influencer campaigns today.</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const data = {
+                  activeCampaigns: stats.activeCampaigns,
+                  totalReach: stats.totalReach,
+                  campaignROI: stats.campaignROI,
+                  totalSpend: stats.totalSpend,
+                  recentCampaigns: campaigns.map(c => ({
+                    name: c.name,
+                    status: c.status,
+                    budget: c.budget,
+                    influencers: c.influencerCount,
+                  })),
+                };
+                const csvRows = [
+                  ['Metric', 'Value'],
+                  ['Active Campaigns', stats.activeCampaigns],
+                  ['Total Reach', stats.totalReach],
+                  ['Campaign ROI', stats.campaignROI],
+                  ['Total Spend', stats.totalSpend],
+                  [],
+                  ['Campaign Name', 'Status', 'Budget', 'Influencers'],
+                  ...campaigns.map(c => [c.name, c.status, c.budget || 0, c.influencerCount || 0]),
+                ];
+                const csvContent = csvRows.map(r => Array.isArray(r) ? r.join(',') : '').join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dashboard-export.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({ title: "Exported", description: "Dashboard data exported as CSV" });
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
 
           {/* Stats Grid */}
@@ -300,17 +341,17 @@ export const Dashboard = () => {
                       role="button"
                       aria-label={`View campaign: ${campaign.name}`}
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-sm md:text-base">{campaign.name}</h4>
-                          <Badge 
+                          <h4 className="font-medium text-xs md:text-sm leading-tight truncate max-w-[160px]">{campaign.name}</h4>
+                          <Badge
                             variant={campaign.status === "active" ? "default" : campaign.status === "completed" ? "secondary" : "outline"}
-                            className="text-[10px] md:text-xs capitalize"
+                            className="text-[9px] md:text-[10px] capitalize px-1.5 py-0"
                           >
                             {campaign.status}
                           </Badge>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs md:text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] md:text-xs text-muted-foreground">
                           <span>{campaign.influencerCount || 0} influencers</span>
                           <span>${(campaign.budget || 0).toLocaleString()}</span>
                         </div>

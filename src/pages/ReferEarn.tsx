@@ -60,7 +60,7 @@ export const ReferEarn = () => {
                 <Gift className="h-8 w-8 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text tracking-tight">Refer and Earn</h1>
+            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Refer and Earn</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Share the power of our influencer marketing platform with your network and earn rewards together
             </p>

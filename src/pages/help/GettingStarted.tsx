@@ -176,7 +176,7 @@ export const GettingStarted = () => {
                   <Book className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Getting Started</h1>
+              <h1 className="text-4xl text-gray-900 font-bold">Getting Started</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Everything you need to know to get started with Snappi and launch your first successful influencer campaign.
               </p>

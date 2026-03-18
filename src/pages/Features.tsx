@@ -112,7 +112,7 @@ export const Features = () => {
             <Badge variant="secondary" className="mb-4">
               Platform Features
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900">
               Everything You Need for
               <br />
               Influencer Marketing Success

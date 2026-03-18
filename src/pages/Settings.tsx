@@ -33,7 +33,7 @@ export const Settings = () => {
         
         <main className="flex-1 p-6 space-y-6">
           <div>
-            <h1 className="text-3xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Settings</h1>
+            <h1 className="text-3xl text-gray-900 font-bold">Settings</h1>
             <p className="text-muted-foreground">Manage your account settings and preferences</p>
           </div>
 

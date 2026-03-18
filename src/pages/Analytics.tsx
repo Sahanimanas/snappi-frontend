@@ -101,7 +101,7 @@ export const Analytics = () => {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text tracking-tight">Analytics Dashboard</h1>
+                <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>
                 <p className="text-lg text-muted-foreground">Track your campaign performance and influencer metrics</p>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">

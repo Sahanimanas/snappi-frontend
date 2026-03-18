@@ -262,7 +262,7 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
             <Bell className="h-5 w-5" />
           </Button>
 
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title="Settings">
             <User className="h-5 w-5" />
           </Button>
 

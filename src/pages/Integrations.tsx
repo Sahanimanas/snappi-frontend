@@ -128,7 +128,7 @@ export const Integrations = () => {
         <main className="flex-1 p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Integrations</h1>
+              <h1 className="text-3xl text-gray-900 font-bold">Integrations</h1>
               <p className="text-muted-foreground">Connect your favorite tools to streamline your workflow</p>
             </div>
             <Button variant="premium" className="animate-pulse-glow">

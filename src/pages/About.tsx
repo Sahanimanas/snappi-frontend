@@ -15,7 +15,7 @@ export const About = () => {
             <Badge variant="secondary" className="mb-4">
               About Snappi
             </Badge>
-            <h1 className="text-4xl md:text-6xl  font-bold mb-6 bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text">
+            <h1 className="text-4xl md:text-6xl  font-bold mb-6 text-gray-900">
               Revolutionizing Influencer
               <br />
               Marketing for SMBs

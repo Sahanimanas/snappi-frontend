@@ -236,7 +236,7 @@ export const AccountSettings = () => {
                   <Settings className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Account Settings</h1>
+              <h1 className="text-4xl text-gray-900 font-bold">Account Settings</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Manage your account preferences, security settings, and team permissions for optimal platform experience.
               </p>

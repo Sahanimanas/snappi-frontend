@@ -65,7 +65,8 @@ const platformOptions = [
   { value: "twitter", label: "Twitter/X", icon: Twitter },
   { value: "facebook", label: "Facebook", icon: Facebook },
   { value: "linkedin", label: "LinkedIn", icon: Linkedin },
-  { value: "pinterest", label: "Pinterest", icon: LinkIcon },
+  { value: "snapchat", label: "Snapchat", icon: LinkIcon },
+  { value: "threads", label: "Threads", icon: LinkIcon },
   { value: "other", label: "Other", icon: LinkIcon },
 ];
 
@@ -175,10 +176,10 @@ export const TrackingSubmission = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!platform || !postUrl) {
+    if (!platform || !postUrl || !caption.trim()) {
       toast({
         title: "Missing Fields",
-        description: "Please select a platform and enter the post URL",
+        description: "Please select a platform, enter the post URL, and provide a caption",
         variant: "destructive",
       });
       return;
@@ -375,20 +376,21 @@ export const TrackingSubmission = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="caption">Caption (Optional)</Label>
+                <Label htmlFor="caption">Caption *</Label>
                 <Textarea
                   id="caption"
                   placeholder="Enter the post caption..."
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   rows={3}
+                  required
                 />
               </div>
 
               <Button
                 type="submit"
                 className="w-full"
-                disabled={submitting || !platform || !postUrl}
+                disabled={submitting || !platform || !postUrl || !caption.trim()}
               >
                 {submitting ? (
                   <>

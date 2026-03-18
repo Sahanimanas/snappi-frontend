@@ -80,7 +80,7 @@ export const Signup = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-background/80 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold text-gray-900">
             Create Account
           </CardTitle>
           <CardDescription>

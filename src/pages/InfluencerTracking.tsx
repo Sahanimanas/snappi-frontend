@@ -135,7 +135,7 @@ export const InfluencerTracking = () => {
         <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto h-[calc(100vh-theme(spacing.16))]">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text">
+            <h1 className="text-3xl font-bold text-gray-900">
               Performance Tracking
             </h1>
             <p className="text-muted-foreground mt-1">

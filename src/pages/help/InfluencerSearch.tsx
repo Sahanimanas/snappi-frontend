@@ -826,7 +826,7 @@ export const InfluencerSearch = () => {
                   <Users className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Influencer Search</h1>
+              <h1 className="text-4xl text-gray-900 font-bold">Influencer Search</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Master the art of discovering, evaluating, and connecting with the perfect influencers for your brand campaigns.
               </p>

@@ -252,7 +252,7 @@ export const BillingPricing = () => {
                   <DollarSign className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Billing & Pricing</h1>
+              <h1 className="text-4xl text-gray-900 font-bold">Billing & Pricing</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Everything you need to know about Snappi's pricing plans, billing processes, and account management.
               </p>

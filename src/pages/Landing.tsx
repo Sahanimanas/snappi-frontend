@@ -132,7 +132,7 @@ export const Landing = () => {
         <div className="container relative py-32 md:py-40">
           <div className="text-center space-y-8 animate-fade-in">
             
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text tracking-tight leading-tight">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tight leading-tight">
               The All-in-One
               <br />
               <span className="bg-gradient-hero bg-clip-text text-transparent relative">
@@ -302,9 +302,13 @@ export const Landing = () => {
                         Metric
                       </TableHead>
                       <TableHead className="font-bold text-primary text-base text-center bg-gradient-to-r from-primary/5 to-primary/10">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <Logo className="h-4 w-4" />
-                          <span>Snappi</span>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="relative shrink-0">
+                            <div className="bg-gradient-primary p-1.5 rounded-lg">
+                              <Zap size={16} className="text-white fill-white" />
+                            </div>
+                          </div>
+                          <span className="text-base font-bold uppercase tracking-wide">Snappi</span>
                         </div>
                       </TableHead>
                       <TableHead className="font-bold text-foreground text-base text-center">

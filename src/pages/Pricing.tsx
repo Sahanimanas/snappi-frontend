@@ -74,7 +74,7 @@ export const Pricing = () => {
             <Badge variant="secondary" className="mb-4">
               Pricing Plans
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900">
               Choose Your Perfect Plan
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">

@@ -399,8 +399,8 @@ export const CampaignDetail = () => {
             {[
               {
                 label: "Budget",
-                value: `$${formatNumber(campaign.budget?.total || 0)}`,
-                sub: `$${formatNumber(budgetSpent)} spent`,
+                value: `${((campaign as any).currency && (campaign as any).currency !== 'USD') ? (campaign as any).currency + ' ' : '$'}${formatNumber(campaign.budget?.total || 0)}`,
+                sub: `${((campaign as any).currency && (campaign as any).currency !== 'USD') ? (campaign as any).currency + ' ' : '$'}${formatNumber(budgetSpent)} spent`,
                 icon: DollarSign,
                 color: "text-green-600",
               },
@@ -446,9 +446,9 @@ export const CampaignDetail = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex justify-between text-sm mb-2">
-                    <span>${formatNumber(budgetSpent)} spent</span>
+                    <span>{((campaign as any).currency && (campaign as any).currency !== 'USD') ? (campaign as any).currency + ' ' : '$'}{formatNumber(budgetSpent)} spent</span>
                     <span>
-                      ${formatNumber(campaign.budget?.remaining || budgetTotal - budgetSpent)}{" "}
+                      {((campaign as any).currency && (campaign as any).currency !== 'USD') ? (campaign as any).currency + ' ' : '$'}{formatNumber(campaign.budget?.remaining || budgetTotal - budgetSpent)}{" "}
                       remaining
                     </span>
                   </div>
@@ -465,27 +465,37 @@ export const CampaignDetail = () => {
                   <CardTitle className="text-sm font-medium">Performance Metrics</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[
                       {
-                        label: "Reach",
-                        value: formatNumber(campaign.performance?.totalReach || 0),
+                        label: "Views",
+                        value: formatNumber(performance?.totalViews || campaign.performance?.totalReach || 0),
                         icon: Eye,
                       },
                       {
-                        label: "Clicks",
-                        value: formatNumber(Object.values(trackingLinks).reduce((sum, link) => sum + (link.clickStats?.totalClicks || 0), 0)),
-                        icon: MousePointerClick,
+                        label: "Likes",
+                        value: formatNumber(performance?.totalLikes || 0),
+                        icon: TrendingUp,
                       },
                       {
-                        label: "Posts",
-                        value: Object.values(trackingLinks).reduce((sum, link) => sum + (link.submittedPosts?.length || 0), 0),
+                        label: "Comments",
+                        value: formatNumber(performance?.totalComments || 0),
+                        icon: Eye,
+                      },
+                      {
+                        label: "Saves",
+                        value: formatNumber(performance?.totalSaves || 0),
                         icon: Target,
                       },
                       {
-                        label: "Links",
-                        value: Object.keys(trackingLinks).length,
-                        icon: LinkIcon,
+                        label: "Shares",
+                        value: formatNumber(performance?.totalShares || 0),
+                        icon: Users,
+                      },
+                      {
+                        label: "Link Clicks",
+                        value: formatNumber(Object.values(trackingLinks).reduce((sum, link) => sum + (link.clickStats?.totalClicks || 0), 0)),
+                        icon: MousePointerClick,
                       },
                     ].map((m) => (
                       <div key={m.label} className="text-center p-3 bg-muted/50 rounded-lg">
@@ -617,6 +627,18 @@ export const CampaignDetail = () => {
 
             {/* Right Column */}
             <div className="space-y-4">
+              {/* Scope */}
+              {(campaign as any).scope && (
+                <Card className="border-2 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Scope</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm whitespace-pre-wrap">{(campaign as any).scope}</p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Campaign Details */}
               <Card>
                 <CardHeader className="pb-2">

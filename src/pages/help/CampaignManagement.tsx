@@ -208,7 +208,7 @@ export const CampaignManagement = () => {
                   <Target className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <h1 className="text-4xl bg-gradient-to-b from-gray-900 to-blue-600 text-transparent bg-clip-text font-bold">Campaign Management</h1>
+              <h1 className="text-4xl text-gray-900 font-bold">Campaign Management</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Master the art of creating, managing, and optimizing influencer campaigns for maximum impact and ROI.
               </p>

@@ -371,23 +371,12 @@ export const Influencers = () => {
                 </div>
               </>
             ) : (
-              <>
-                <div className="text-center">
-                  <p className="text-2xl font-bold">
-                    {influencer.platformCount || influencer.platforms?.length || 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Platforms</p>
-                </div>
-                <div className="text-center">
-                  <Badge
-                    variant={influencer.status === 'available' ? 'default' : 'secondary'}
-                    className="mb-1"
-                  >
-                    {influencer.status || 'Available'}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground">Status</p>
-                </div>
-              </>
+              <div className="text-center">
+                <p className="text-2xl font-bold">
+                  {influencer.platformCount || influencer.platforms?.length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">Platforms</p>
+              </div>
             )}
           </div>
 

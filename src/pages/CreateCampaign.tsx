@@ -15,16 +15,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Target, Users, FileText, Loader2, Link2, Plus, X, HelpCircle, DollarSign } from "lucide-react";
+import { ArrowLeft, Target, Users, FileText, Loader2, Link2, Plus, X, HelpCircle, DollarSign, CheckCircle, Search } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { campaignsAPI, Campaign } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-const PLATFORMS = ["instagram", "youtube", "tiktok", "facebook", "twitter", "linkedin", "pinterest", "snapchat"];
+const PLATFORMS = ["instagram", "youtube", "tiktok", "facebook", "twitter", "linkedin", "snapchat", "threads"];
 const OBJECTIVES = [
   { value: "brand_awareness", label: "Brand Awareness" },
   { value: "increase_sales", label: "Increase Sales" },
@@ -61,6 +68,8 @@ interface FormData {
   targetPlatforms: string[];
   productUrls: string[];
   creatorBrief: string;
+  scope: string;
+  successMetrics: string;
 }
 
 export const CreateCampaign = () => {
@@ -79,12 +88,17 @@ export const CreateCampaign = () => {
     campaignType: "",
     currency: "USD",
     budget: "",
-    startDate: new Date().toISOString().split("T")[0], // Default to today
+    startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     targetPlatforms: [],
     productUrls: [],
     creatorBrief: "",
+    scope: "",
+    successMetrics: "",
   });
+
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [createdCampaignId, setCreatedCampaignId] = useState<string | null>(null);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -115,6 +129,8 @@ export const CreateCampaign = () => {
       targetPlatforms: c.targetPlatforms || [],
       productUrls: c.productUrls || [],
       creatorBrief: (c as any).creatorBrief || "",
+      scope: (c as any).scope || "",
+      successMetrics: (c as any).successMetrics || "",
     });
     setFetching(false);
   };
@@ -174,17 +190,21 @@ export const CreateCampaign = () => {
 
     setLoading(true);
 
-    const payload: Partial<Campaign> = {
+    const payload: any = {
       name: formData.name.trim(),
       description: formData.description.trim() || undefined,
-      objective: formData.objective as Campaign["objective"] || undefined,
-      campaignType: formData.campaignType as Campaign["campaignType"] || undefined,
+      objective: formData.objective || undefined,
+      campaignType: formData.campaignType || undefined,
       status,
+      currency: formData.currency,
       budget: formData.budget ? { total: parseFloat(formData.budget) } : undefined,
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
       targetPlatforms: formData.targetPlatforms,
       productUrls: formData.productUrls.filter(url => url.trim() !== ""),
+      creatorBrief: formData.creatorBrief.trim() || undefined,
+      scope: formData.scope.trim() || undefined,
+      successMetrics: formData.successMetrics.trim() || undefined,
     };
 
     const result = isEditMode
@@ -202,11 +222,20 @@ export const CreateCampaign = () => {
       return;
     }
 
-    toast({
-      title: isEditMode ? "Campaign Updated" : "Campaign Created",
-      description: `"${formData.name}" saved successfully`,
-    });
-    navigate("/campaigns");
+    setHasUnsavedChanges(false);
+
+    if (isEditMode) {
+      toast({
+        title: "Campaign Updated",
+        description: `"${formData.name}" saved successfully`,
+      });
+      navigate("/campaigns");
+    } else {
+      // Show success dialog with CTA to search influencers
+      const newId = result.data?._id;
+      setCreatedCampaignId(newId || null);
+      setShowSuccessDialog(true);
+    }
   };
 
   if (fetching) {
@@ -342,7 +371,13 @@ export const CreateCampaign = () => {
                         type="date"
                         name="startDate"
                         value={formData.startDate}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const year = val.split('-')[0];
+                          if (year && year.length > 4) return;
+                          handleChange(e);
+                        }}
+                        max="9999-12-31"
                         className="h-9"
                       />
                     </div>
@@ -352,10 +387,28 @@ export const CreateCampaign = () => {
                         type="date"
                         name="endDate"
                         value={formData.endDate}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const year = val.split('-')[0];
+                          if (year && year.length > 4) return;
+                          handleChange(e);
+                        }}
+                        max="9999-12-31"
                         className="h-9"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="scope" className="text-xs">Scope</Label>
+                    <Textarea
+                      id="scope"
+                      name="scope"
+                      value={formData.scope}
+                      onChange={handleChange}
+                      placeholder="Define the scope of this campaign, e.g. target audience, expected outcomes, key deliverables..."
+                      rows={3}
+                      className="resize-none"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -495,6 +548,29 @@ Example:
               </CardContent>
             </Card>
 
+            {/* Success Metrics */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Success Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Define measurable success criteria to evaluate campaign performance at completion.
+                </p>
+                <Textarea
+                  name="successMetrics"
+                  value={formData.successMetrics}
+                  onChange={handleChange}
+                  placeholder="e.g., >20,000 views, >2,000 clicks, >500 new followers, 5% engagement rate..."
+                  rows={4}
+                  className="resize-none"
+                />
+              </CardContent>
+            </Card>
+
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
               <Button
@@ -511,6 +587,53 @@ Example:
               </Button>
             </div>
           </form>
+
+          {/* Success Dialog after Campaign Creation */}
+          <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Campaign Created!
+                </DialogTitle>
+                <DialogDescription>
+                  "{formData.name}" has been created successfully. What would you like to do next?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 pt-4">
+                <Button
+                  onClick={() => {
+                    setShowSuccessDialog(false);
+                    navigate(`/search${createdCampaignId ? `?campaign=${createdCampaignId}` : ''}`);
+                  }}
+                  className="w-full"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Influencers
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowSuccessDialog(false);
+                    navigate(createdCampaignId ? `/campaigns/${createdCampaignId}` : '/campaigns');
+                  }}
+                  className="w-full"
+                >
+                  View Campaign
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowSuccessDialog(false);
+                    navigate("/campaigns");
+                  }}
+                  className="w-full"
+                >
+                  Go to Campaigns
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </div>
