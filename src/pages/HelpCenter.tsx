@@ -127,10 +127,10 @@ export const HelpCenter = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="flex">
+      <div className="flex min-w-0">
         <Sidebar />
         
-        <main className="flex-1 p-6 space-y-8">
+        <main className="flex-1 p-4 md:p-6 w-full min-w-0 space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl text-gray-900 font-bold">Help Center</h1>
             <p className="text-muted-foreground text-lg">

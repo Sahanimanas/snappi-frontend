@@ -49,10 +49,10 @@ export const ReferEarn = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="flex">
+      <div className="flex min-w-0">
         <Sidebar />
         
-        <main className="flex-1 p-6 space-y-8 max-w-5xl">
+        <main className="flex-1 p-4 md:p-6 w-full min-w-0 space-y-8 max-w-5xl">
           {/* Header Section */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center mb-4">
@@ -117,6 +117,55 @@ export const ReferEarn = () => {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* How the Referral Mechanism Can Work Technically */}
+          <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-2xl">How the Referral Mechanism Can Work Technically</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="list-decimal pl-6 space-y-3 text-sm">
+                <li>
+                  <span className="font-semibold">Referral Code Generation</span>
+                  <ul className="list-disc pl-6 mt-1 text-muted-foreground">
+                    <li>Assign a unique token to each user.</li>
+                  </ul>
+                </li>
+                <li>
+                  <span className="font-semibold">Tracking Clicks &amp; Sign-ups</span>
+                  <ul className="list-disc pl-6 mt-1 text-muted-foreground">
+                    <li>Link appended with referral code.</li>
+                  </ul>
+                </li>
+                <li>
+                  <span className="font-semibold">Verification Logic</span>
+                  <ul className="list-disc pl-6 mt-1 text-muted-foreground">
+                    <li>Validate successful referral conditions (e.g., after the person referred pays).</li>
+                  </ul>
+                </li>
+                <li>
+                  <span className="font-semibold">Reward Distribution</span>
+                  <ul className="list-disc pl-6 mt-1 text-muted-foreground">
+                    <li>
+                      Automated 20% discount based on the plan they purchased for both the referrer and referee.
+                      If the referrer is on a yearly plan, they get 20% of the future months, limited to a period of 12 months.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <span className="font-semibold">Notifications</span>
+                  <ul className="list-disc pl-6 mt-1 text-muted-foreground">
+                    <li>Emails or in-app messages to inform both parties.</li>
+                  </ul>
+                </li>
+              </ol>
+
+              <h3 className="font-semibold mt-6 mb-2">Easy Link Sharing</h3>
+              <ul className="list-disc pl-6 text-sm text-muted-foreground">
+                <li>Provide built-in share buttons (WhatsApp, Facebook, Email, LinkedIn).</li>
+              </ul>
             </CardContent>
           </Card>
 

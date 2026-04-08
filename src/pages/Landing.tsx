@@ -29,12 +29,12 @@ const features = [
   {
     icon: Search,
     title: "AI-Powered Search",
-    description: "Find perfect micro influencers with our intelligent search engine across Instagram, YouTube, TikTok, and Facebook."
+    description: "Find perfect influencers with our intelligent search engine across Instagram, YouTube, TikTok, and Facebook."
   },
   {
     icon: Target,
     title: "Campaign Management",
-    description: "Launch and manage campaigns with templates, bulk outreach, contract management, and timeline tracking."
+    description: "Launch and manage campaigns with setup wizards, custom contract uploads, and timeline tracking."
   },
   {
     icon: BarChart3,
@@ -91,7 +91,7 @@ const testimonials = [
     name: "Sarah Johnson",
     role: "Marketing Director",
     company: "StyleCo",
-    content: "Snappi helped us find perfect micro influencers that increased our engagement by 300%. The ROI tracking is incredible!",
+    content: "Snappi helped us find perfect influencers that increased our engagement by 300%. The ROI tracking is incredible!",
     rating: 5
   },
   {

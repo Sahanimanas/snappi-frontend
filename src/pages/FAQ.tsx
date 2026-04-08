@@ -13,11 +13,11 @@ const faqs = [
     questions: [
       {
         question: "What is Snappi?",
-        answer: "Snappi is an all-in-one influencer marketing platform designed specifically for small to medium-sized businesses. We help you discover micro-influencers, manage campaigns, and track performance all in one place."
+        answer: "Snappi is an all-in-one influencer marketing platform designed specifically for small to medium-sized businesses. We help you discover influencers, manage campaigns, and track performance all in one place."
       },
       {
         question: "How do I get started?",
-        answer: "Simply sign up for a free account to start exploring our platform. You can begin with our freemium tier which allows 1 search per day and viewing up to 2 influencer profiles. When you're ready to scale, you can upgrade to one of our paid plans."
+        answer: "Simply sign up for a free account to start exploring our platform. You can begin with our freemium tier which allows 1 search per week. When you're ready to scale, you can upgrade to one of our paid plans."
       },
       {
         question: "Do I need technical knowledge to use Snappi?",
@@ -30,15 +30,11 @@ const faqs = [
     questions: [
       {
         question: "Which social media platforms does Snappi support?",
-        answer: "We support influencer discovery across Instagram, YouTube, TikTok, Facebook, X (Twitter), Twitch, and Pinterest. Our AI-powered search engine scans these platforms to find the perfect micro-influencers for your brand."
-      },
-      {
-        question: "What is a micro-influencer?",
-        answer: "Micro-influencers typically have between 5,000 and 50,000 followers. They often have higher engagement rates and more authentic connections with their audience compared to macro-influencers, making them perfect for SMB marketing campaigns."
+        answer: "We support influencer discovery across Instagram, YouTube, TikTok, Facebook, X (Twitter), Snapchat, and LinkedIn. Our AI-powered search engine scans these platforms to find the perfect influencers for your brand."
       },
       {
         question: "How does the AI matching work?",
-        answer: "Our AI analyzes multiple factors including audience demographics, engagement rates, content style, brand affinity, and niche relevance to provide you with a Match Score (up to 100/100) for each influencer."
+        answer: "Our AI uses natural language processing to interpret your search query and matches it against influencer profiles, niches, audience demographics, location, and follower counts. You can refine results using filters such as platform, location, niche/keywords, and follower range to find the most suitable influencers for your campaign."
       },
       {
         question: "Can I manage multiple campaigns simultaneously?",
@@ -54,10 +50,6 @@ const faqs = [
         answer: "Yes! Our freemium tier is completely free and allows you to test the platform with 1 search per day and viewing up to 2 influencer profiles (without contact information)."
       },
       {
-        question: "What's included in the free trial?",
-        answer: "All paid plans come with a 7-day free trial that gives you full access to all features in that plan. No credit card required to start."
-      },
-      {
         question: "Can I change my plan later?",
         answer: "Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing adjustments."
       },
@@ -68,46 +60,34 @@ const faqs = [
     questions: [
       {
         question: "What types of campaigns can I create?",
-        answer: "You can create four types of campaigns: Paid promotion (direct payment), Affiliate campaigns (commission-based with Shopify/WooCommerce integration), Product gifting campaigns, and Hybrid campaigns (Paid + gifting)."
+        answer: "You can create three types of campaigns: Paid promotion (direct payment), Affiliate campaigns (commission-based with Shopify/WooCommerce integration), and Product gifting campaigns."
       },
       {
         question: "How do I communicate with influencers?",
-        answer: "Snappi integrates with Gmail and Outlook for seamless communication. We also provide email templates and bulk outreach capabilities to streamline your influencer outreach."
+        answer: "Snappi integrates with Gmail and Outlook for seamless communication."
       },
       {
         question: "Can I track campaign performance?",
-        answer: "Yes! Our Performance Analytics tool provides real-time tracking of reach, engagement, and ROI. You can view visual dashboards and export detailed reports in PDF, Excel, or CSV format."
+        answer: "Yes! Our Performance Analytics tool provides real-time tracking of reach, engagement, and ROI. You can view visual dashboards and export detailed reports in CSV format."
       },
       {
         question: "How do contracts work?",
-        answer: "We provide template contracts for each campaign type, or you can upload your own. Our DocuSign integration makes it easy to send, sign, and store contracts securely."
+        answer: "You can upload your own custom contracts. Contracts are then sent to influencers for signature before the campaign begins."
       }
     ]
   },
   {
-    category: "Payments & Security",
+    category: "Security",
     questions: [
-      {
-        question: "How do I pay influencers?",
-        answer: "Snappi integrates with PayPal and Stripe for secure payment processing. You can make individual payments or use our bulk payout feature for multiple influencers at once."
-      },
       {
         question: "Is my data secure?",
         answer: "Absolutely. We use enterprise-grade security with data encryption, two-factor authentication, and regular security audits. We're also fully GDPR compliant."
-      },
-      {
-        question: "What payment methods do you accept?",
-        answer: "We accept all major credit cards and PayPal. All payments are processed securely through industry-standard payment processors."
       }
     ]
   },
   {
     category: "Support",
     questions: [
-      {
-        question: "What kind of support do you offer?",
-        answer: "Support varies by plan: Starter plans include email support, and Professional plans get priority support."
-      },
       {
         question: "Do you offer training or onboarding?",
         answer: "We provide embedded video tutorials for onboarding and written guides. The great part is that our platform is very intuitive/user-friendly and doesn't require training!"

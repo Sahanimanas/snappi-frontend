@@ -4,6 +4,7 @@ import { Logo } from "@/components/ui/logo";
 import { Search, Menu, Bell, User, LogOut, Loader2, Users, Megaphone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useSidebar } from "@/context/SidebarContext";
 import { influencersAPI, campaignsAPI, Influencer, Campaign, formatNumber } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export const Header = ({ isLandingPage = false }: HeaderProps) => {
   const { user, signOut } = useAuth();
+  const { toggle: toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   
   // Search state
@@ -102,7 +104,7 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
   if (isLandingPage) {
     return (
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="w-full px-4 md:px-6 flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center">
             <Logo textSize="xl" iconSize={20} />
           </Link>
@@ -123,12 +125,25 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
           </nav>
 
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/signin">Sign In</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
+            {user ? (
+              <>
+                <span className="hidden sm:inline text-sm text-muted-foreground">
+                  Hi, {user.name?.split(" ")[0] || "there"}
+                </span>
+                <Button size="sm" asChild>
+                  <Link to="/dashboard">Go to Dashboard</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/signin">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -137,10 +152,10 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="w-full px-4 md:px-6 flex h-16 items-center justify-between">
         {/* Left section */}
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="md:hidden">
+          <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar} title="Open menu">
             <Menu className="h-5 w-5" />
           </Button>
 
@@ -151,7 +166,7 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
         </div>
 
         {/* Search bar with dropdown */}
-        <div className="flex-1 max-w-xl mx-4 relative" ref={searchRef}>
+        <div className="hidden md:block flex-1 max-w-xl mx-4 relative" ref={searchRef}>
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

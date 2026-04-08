@@ -70,6 +70,7 @@ interface FormData {
   creatorBrief: string;
   scope: string;
   successMetrics: string;
+  deliverables: string[];
 }
 
 export const CreateCampaign = () => {
@@ -95,6 +96,7 @@ export const CreateCampaign = () => {
     creatorBrief: "",
     scope: "",
     successMetrics: "",
+    deliverables: [""],
   });
 
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -131,6 +133,7 @@ export const CreateCampaign = () => {
       creatorBrief: (c as any).creatorBrief || "",
       scope: (c as any).scope || "",
       successMetrics: (c as any).successMetrics || "",
+      deliverables: ((c as any).deliverables && (c as any).deliverables.length > 0) ? (c as any).deliverables : [""],
     });
     setFetching(false);
   };
@@ -180,6 +183,27 @@ export const CreateCampaign = () => {
     }));
   };
 
+  const addDeliverable = () => {
+    setFormData((prev) => ({ ...prev, deliverables: [...prev.deliverables, ""] }));
+    setHasUnsavedChanges(true);
+  };
+
+  const removeDeliverable = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliverables: prev.deliverables.filter((_, i) => i !== index),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const updateDeliverable = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliverables: prev.deliverables.map((d, i) => (i === index ? value : d)),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent, status: Campaign["status"] = "active") => {
     e.preventDefault();
 
@@ -205,6 +229,7 @@ export const CreateCampaign = () => {
       creatorBrief: formData.creatorBrief.trim() || undefined,
       scope: formData.scope.trim() || undefined,
       successMetrics: formData.successMetrics.trim() || undefined,
+      deliverables: formData.deliverables.map(d => d.trim()).filter(d => d !== ""),
     };
 
     const result = isEditMode
@@ -545,6 +570,53 @@ Example:
                   rows={8}
                   className="resize-none"
                 />
+              </CardContent>
+            </Card>
+
+            {/* Deliverables */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Deliverables
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  List what each influencer needs to deliver for this campaign. Influencers will select the matching deliverable when submitting their post.
+                </p>
+                {formData.deliverables.map((d, idx) => (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <Textarea
+                      value={d}
+                      onChange={(e) => updateDeliverable(idx, e.target.value)}
+                      placeholder={`e.g., 1 Instagram Reel featuring product, with caption tagging @brand`}
+                      rows={2}
+                      className="resize-none flex-1"
+                    />
+                    {formData.deliverables.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeDeliverable(idx)}
+                        className="shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addDeliverable}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Deliverable
+                </Button>
               </CardContent>
             </Card>
 

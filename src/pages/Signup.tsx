@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +11,21 @@ import { useToast } from "@/hooks/use-toast";
 export const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'signup' | 'onboarding'>('signup');
+  const [referralCode, setReferralCode] = useState<string>("");
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+      localStorage.setItem("snappi_pending_ref", ref);
+    } else {
+      const stored = localStorage.getItem("snappi_pending_ref");
+      if (stored) setReferralCode(stored);
+    }
+  }, [searchParams]);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -47,7 +60,8 @@ export const Signup = () => {
       password,
       company,
       role: 'brand',
-    });
+      referralCode: referralCode || undefined,
+    } as any);
 
     if (!result.success) {
       toast({
@@ -58,8 +72,17 @@ export const Signup = () => {
     } else {
       toast({
         title: "Account created!",
-        description: "Welcome aboard 🎉",
+        description: referralCode
+          ? "Welcome aboard 🎉 Your 20% referral discount has been applied."
+          : "Welcome aboard 🎉",
       });
+      // Increment the referrer's local counter (best-effort, client-side)
+      if (referralCode) {
+        const key = `snappi_referral_uses_${referralCode}`;
+        const current = parseInt(localStorage.getItem(key) || "0", 10);
+        localStorage.setItem(key, String(current + 1));
+        localStorage.removeItem("snappi_pending_ref");
+      }
       setStep("onboarding");
     }
 
@@ -86,6 +109,11 @@ export const Signup = () => {
           <CardDescription>
             Join Snappi and start your influencer marketing journey
           </CardDescription>
+          {referralCode && (
+            <div className="mt-3 p-2 rounded-md bg-green-50 border border-green-200 text-xs text-green-800">
+              🎉 You were invited via referral code <span className="font-mono font-semibold">{referralCode}</span> — you'll get 20% off your first plan.
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

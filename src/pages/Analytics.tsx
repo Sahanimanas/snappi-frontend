@@ -93,10 +93,10 @@ export const Analytics = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="flex">
+      <div className="flex min-w-0">
         <Sidebar />
         
-        <main className="flex-1 p-6 space-y-8 max-w-7xl">
+        <main className="flex-1 p-4 md:p-6 w-full min-w-0 space-y-8 max-w-7xl">
           {/* Header with Date Range Selector */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

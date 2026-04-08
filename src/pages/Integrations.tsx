@@ -122,10 +122,10 @@ export const Integrations = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="flex">
+      <div className="flex min-w-0">
         <Sidebar />
         
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-4 md:p-6 w-full min-w-0 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl text-gray-900 font-bold">Integrations</h1>

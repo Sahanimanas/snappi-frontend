@@ -191,7 +191,7 @@ export const CampaignManagement = () => {
       <div className="flex">
         <Sidebar />
         
-        <main className="flex-1 p-6 space-y-8">
+        <main className="flex-1 p-4 md:p-6 w-full min-w-0 space-y-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
               <Link to="/help">

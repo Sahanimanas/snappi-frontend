@@ -1,18 +1,16 @@
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Target, BarChart3, Users, MessageCircle, FileText, CreditCard, Shield } from "lucide-react";
+import { Search, Target, BarChart3, Users, FileText, Shield } from "lucide-react";
 
 const features = [
   {
     icon: Search,
     title: "AI-Powered Search Engine",
-    description: "Discover micro influencers across Instagram, YouTube, TikTok, and Facebook using advanced AI algorithms.",
+    description: "Discover influencers across Instagram, YouTube, TikTok, and Facebook using advanced AI algorithms.",
     features: [
-      "Predictive AI search interface",
-      "Advanced filters (location, niche, engagement rate)",
-      "Match Score algorithm (up to 100/100)",
-      "Filter by 4-6%+ engagement rate",
+      "AI influencer interface using natural language input",
+      "Advanced filters (location, niche, followers)",
       "Shortlist management"
     ]
   },
@@ -23,9 +21,7 @@ const features = [
     features: [
       "Multiple campaign types (paid, affiliate, gifting, hybrid)",
       "Campaign setup wizard",
-      "Pre-loaded brief templates",
-      "Bulk email outreach",
-      "Gmail & Outlook integration"
+      "Email integration"
     ]
   },
   {
@@ -36,7 +32,6 @@ const features = [
       "Real-time performance tracking",
       "ROI calculations",
       "Visual dashboards",
-      "1-page summary reports",
       "Export to PDF, Excel, CSV"
     ]
   },
@@ -46,44 +41,18 @@ const features = [
     description: "Organize and manage your influencer relationships with powerful collaboration tools.",
     features: [
       "Influencer profiles & contact info",
-      "Communication history",
       "Performance tracking per influencer",
       "Rating and review system"
     ]
   },
   {
-    icon: MessageCircle,
-    title: "Communication Hub",
-    description: "Streamline all influencer communications in one centralized platform.",
-    features: [
-      "Built-in messaging system",
-      "Email template library",
-      "Automated follow-ups",
-      "Communication logs"
-    ]
-  },
-  {
     icon: FileText,
     title: "Contract & Legal",
-    description: "Handle contracts and legal requirements with integrated document management.",
+    description: "Handle contracts and legal requirements with custom contract uploads.",
     features: [
-      "Template contracts by campaign type",
-      "DocuSign integration",
       "Custom contract uploads",
       "Legal compliance tracking",
       "Document storage & retrieval"
-    ]
-  },
-  {
-    icon: CreditCard,
-    title: "Payment Processing",
-    description: "Secure and efficient payment handling for all your influencer campaigns.",
-    features: [
-      "PayPal & Stripe integration",
-      "Bulk payment processing",
-      "Invoice tracking",
-      "Payment history",
-      "Tax documentation"
     ]
   },
   {

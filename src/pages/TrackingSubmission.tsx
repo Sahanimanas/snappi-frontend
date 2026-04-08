@@ -40,6 +40,7 @@ interface TrackingDetails {
     _id: string;
     name: string;
     status: string;
+    deliverables?: string[];
   };
   influencer: {
     _id: string;
@@ -132,6 +133,7 @@ export const TrackingSubmission = () => {
   const [postType, setPostType] = useState("post");
   const [postUrl, setPostUrl] = useState("");
   const [caption, setCaption] = useState("");
+  const [deliverable, setDeliverable] = useState("");
 
   useEffect(() => {
     if (code) {
@@ -211,6 +213,7 @@ export const TrackingSubmission = () => {
           postType,
           postUrl,
           caption,
+          deliverable: deliverable || undefined,
         }),
       });
       
@@ -227,6 +230,7 @@ export const TrackingSubmission = () => {
         setPostType("post");
         setPostUrl("");
         setCaption("");
+        setDeliverable("");
         // Refresh details to show the new post
         fetchDetails();
       } else {
@@ -374,6 +378,24 @@ export const TrackingSubmission = () => {
                   onChange={(e) => setPostUrl(e.target.value)}
                 />
               </div>
+
+              {details?.campaign?.deliverables && details.campaign.deliverables.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="deliverable">Which deliverable is this for? *</Label>
+                  <Select value={deliverable} onValueChange={setDeliverable}>
+                    <SelectTrigger id="deliverable">
+                      <SelectValue placeholder="Select the deliverable this post fulfils" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {details.campaign.deliverables.map((d, i) => (
+                        <SelectItem key={i} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="caption">Caption *</Label>
