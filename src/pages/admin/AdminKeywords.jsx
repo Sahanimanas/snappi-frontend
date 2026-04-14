@@ -97,14 +97,14 @@ const AdminKeywords = () => {
   const colors = ['#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9', '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF', '#EC4899', '#F43F5E'];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Keywords Management</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Keywords Management</h1>
           <button
             onClick={() => { setShowForm(true); setEditingKeyword(null); setFormData({ name: '', displayName: '', description: '', icon: '', color: '#6366f1', isActive: true }); }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base w-full sm:w-auto"
           >
             + Add Keyword
           </button>
@@ -112,7 +112,7 @@ const AdminKeywords = () => {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg shadow">
               <p className="text-gray-500 text-sm">Total Keywords</p>
               <p className="text-2xl font-bold text-blue-600">{stats.totalKeywords}</p>

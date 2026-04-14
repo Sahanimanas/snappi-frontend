@@ -91,21 +91,21 @@ const AdminInfluencers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Influencer Management</h1>
-          <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Influencer Management</h1>
+          <div className="flex gap-2 sm:gap-3">
             <button
               onClick={() => setShowBulkUpload(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Bulk Upload
             </button>
             <button
               onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               + Add Influencer
             </button>
@@ -114,22 +114,22 @@ const AdminInfluencers = () => {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Total Influencers</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalInfluencers}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+              <p className="text-gray-500 text-xs sm:text-sm">Total Influencers</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalInfluencers}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Verified</p>
-              <p className="text-2xl font-bold text-green-600">{stats.verifiedCount}</p>
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+              <p className="text-gray-500 text-xs sm:text-sm">Verified</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.verifiedCount}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Platforms</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.platformStats?.length || 0}</p>
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+              <p className="text-gray-500 text-xs sm:text-sm">Platforms</p>
+              <p className="text-xl sm:text-2xl font-bold text-purple-600">{stats.platformStats?.length || 0}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Available</p>
-              <p className="text-2xl font-bold text-orange-600">
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+              <p className="text-gray-500 text-xs sm:text-sm">Available</p>
+              <p className="text-xl sm:text-2xl font-bold text-orange-600">
                 {stats.statusBreakdown?.find(s => s._id === 'available')?.count || 0}
               </p>
             </div>
@@ -173,7 +173,8 @@ const AdminInfluencers = () => {
           {loading ? (
             <div className="p-8 text-center">Loading...</div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Influencer</th>
@@ -261,6 +262,7 @@ const AdminInfluencers = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
 
           {/* Pagination */}
