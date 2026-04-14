@@ -220,7 +220,7 @@ export const Campaigns = () => {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto h-[calc(100vh-theme(spacing.16))]">
+        <main className="flex-1 w-full p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto h-[calc(100vh-theme(spacing.16))]">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -249,7 +249,7 @@ export const Campaigns = () => {
               { label: "Avg Performance", value: "+21%", icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-500/10" },
             ].map((stat) => (
               <Card key={stat.label} className="border shadow-sm">
-                <CardContent className="p-5 flex items-center gap-4">
+                <CardContent className="p-3 sm:p-5 flex items-center gap-3 sm:gap-4">
                   <div className={`p-3 rounded-xl ${stat.bg}`}>
                     <stat.icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
@@ -359,23 +359,23 @@ export const Campaigns = () => {
                       className="border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group"
                       onClick={() => handleCardClick(campaign._id)}
                     >
-                      <CardContent className="p-5">
-                        <div className="flex items-center justify-between gap-6">
+                      <CardContent className="p-4 sm:p-5">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
                           {/* Left: Name + Badge + Platforms */}
-                          <div className="flex items-center gap-4 min-w-0 flex-1">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-3">
-                                <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                <h3 className="font-semibold text-base sm:text-lg truncate group-hover:text-primary transition-colors">
                                   {campaign.name}
                                 </h3>
                                 <Badge
                                   variant={getStatusColor(campaign.status)}
-                                  className="text-xs px-2.5 py-0.5 capitalize"
+                                  className="text-xs px-2 sm:px-2.5 py-0.5 capitalize flex-shrink-0"
                                 >
                                   {campaign.status}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-2 mt-2">
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <span className="text-xs text-muted-foreground">Platforms:</span>
                                 {campaign.targetPlatforms?.slice(0, 5).map((p: string) => (
                                   <PlatformIcon key={p} platform={p} className="h-4 w-4 opacity-70" />
@@ -390,7 +390,7 @@ export const Campaigns = () => {
                           </div>
 
                           {/* Center: Stats */}
-                          <div className="hidden md:flex items-center gap-8">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center gap-3 sm:gap-4 lg:gap-8">
                             <div className="text-center min-w-[80px]">
                               <p className="text-xs text-muted-foreground mb-1">Budget</p>
                               <p className="font-semibold text-base">
@@ -437,14 +437,14 @@ export const Campaigns = () => {
                           </div>
 
                           {/* Right: Actions */}
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-2 shrink-0 w-full lg:w-auto">
                             <Button
                               variant="outline"
-                              size="default"
-                              className="h-10 px-4"
+                              size="sm"
+                              className="h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm flex-1 lg:flex-none"
                               onClick={(e) => handleStatusChange(e, campaign)}
                             >
-                              <ActionIcon className="h-4 w-4 mr-2" />
+                              <ActionIcon className="h-4 w-4 mr-1.5 sm:mr-2" />
                               {getStatusAction(campaign.status).label}
                             </Button>
 
@@ -452,8 +452,8 @@ export const Campaigns = () => {
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  size="default"
-                                  className="h-10 w-10 p-0"
+                                  size="sm"
+                                  className="h-9 w-9 sm:h-10 sm:w-10 p-0 flex-shrink-0"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreHorizontal className="h-5 w-5" />
@@ -490,7 +490,7 @@ export const Campaigns = () => {
                               </DropdownMenuContent>
                             </DropdownMenu>
 
-                            <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block" />
                           </div>
                         </div>
                       </CardContent>

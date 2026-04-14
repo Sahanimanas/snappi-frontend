@@ -140,60 +140,60 @@ const InfluencerCard = ({
 
   return (
     <Card className="border hover:border-primary/40 hover:shadow-md transition-all">
-      <CardContent className="p-5">
-        <div className="flex items-center gap-6">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
           {/* Avatar + Info */}
-          <div className="flex items-center gap-4 min-w-[280px]">
-            <Avatar className="h-14 w-14 border-2 border-muted">
+          <div className="flex items-center gap-3 sm:gap-4 lg:min-w-[260px] min-w-0">
+            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-muted flex-shrink-0">
               <AvatarImage src={influencer.profileImage} alt={influencer.name} />
-              <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-base sm:text-lg font-bold bg-primary/10 text-primary">
                 {influencer.name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-semibold truncate">{influencer.name}</h3>
                 {(influencer as any).matchScore > 0 && (
                   <MatchScoreBadge score={(influencer as any).matchScore} />
                 )}
               </div>
               {primaryKeyword && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {primaryKeyword.displayName || primaryKeyword.name}
                 </p>
               )}
               {influencer.location?.country && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <MapPin className="h-3 w-3" />
-                  {[influencer.location.city, influencer.location.country].filter(Boolean).join(", ")}
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{[influencer.location.city, influencer.location.country].filter(Boolean).join(", ")}</span>
                 </p>
               )}
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex-1 flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-2xl font-bold">
+          <div className="flex-1 grid grid-cols-3 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8">
+            <div className="text-center min-w-0">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
                 {formatNumber(influencer.totalFollowers || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">Total Followers</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Followers</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
+            <div className="text-center min-w-0">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 truncate">
                 {(influencer.avgEngagement || 0).toFixed(1)}%
               </p>
-              <p className="text-xs text-muted-foreground">Avg Engagement</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Avg Engagement</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">
+            <div className="text-center min-w-0">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
                 {influencer.platformCount || influencer.platforms?.length || 0}
               </p>
-              <p className="text-xs text-muted-foreground">Platforms</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Platforms</p>
             </div>
             {/* Platform Icons */}
             {influencer.platforms && influencer.platforms.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="col-span-3 lg:col-span-1 flex items-center justify-center flex-wrap gap-2">
                 {influencer.platforms.map((p, idx) => (
                   <PlatformIconLink key={idx} platform={p} />
                 ))}
@@ -202,13 +202,13 @@ const InfluencerCard = ({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-2 min-w-[150px]">
-            <Button onClick={() => onAddToShortlist(influencer)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Shortlist
+          <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[150px]">
+            <Button size="sm" className="flex-1 lg:flex-none" onClick={() => onAddToShortlist(influencer)}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              <span className="text-xs sm:text-sm">Add to Shortlist</span>
             </Button>
-            <Button variant="outline" onClick={() => onContact(influencer)}>
-              Contact
+            <Button size="sm" variant="outline" className="flex-1 lg:flex-none" onClick={() => onContact(influencer)}>
+              <span className="text-xs sm:text-sm">Contact</span>
             </Button>
           </div>
         </div>
@@ -430,24 +430,24 @@ export const SearchInfluencers = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto">
+        <main className="flex-1 w-full p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto">
           {/* AI-Powered Search Bar */}
           <Card className="shadow-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50/50 to-white">
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-6 md:p-8">
               <div className="flex items-center gap-3 mb-4">
-                <Sparkles className="h-6 w-6 text-blue-500" />
-                <h2 className="text-xl font-bold">AI-Powered Influencer Search</h2>
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+                <h2 className="text-base sm:text-xl font-bold">AI-Powered Influencer Search</h2>
               </div>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                 Describe who you're looking for — e.g. <span className="font-medium text-foreground">"health influencer male"</span>, <span className="font-medium text-foreground">"fashion blogger female India"</span>, <span className="font-medium text-foreground">"tech reviewer with 100K+ followers"</span>
               </p>
               <form onSubmit={handleSearch}>
                 <div className="relative">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-blue-500" />
+                  <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                   <Input
                     ref={searchInputRef}
-                    placeholder="e.g., health influencer male, fitness blogger, beauty guru, food vlogger..."
-                    className="pl-14 h-16 text-lg border-2 border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 shadow-lg shadow-blue-100 rounded-xl"
+                    placeholder="e.g., health influencer male, fitness blogger..."
+                    className="pl-9 sm:pl-11 pr-24 sm:pr-28 h-11 sm:h-12 text-sm sm:text-base border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm rounded-lg"
                     value={searchTerm}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
                     onFocus={() => suggestions.names.length > 0 && setShowSuggestions(true)}
@@ -455,11 +455,11 @@ export const SearchInfluencers = () => {
                   />
                   <Button
                     type="submit"
-                    size="lg"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-12 px-8 bg-blue-600 hover:bg-blue-700"
+                    size="sm"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700"
                   >
-                    <Search className="h-5 w-5 mr-2" />
-                    Search
+                    <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Search</span>
                   </Button>
 
                   {/* Autocomplete Suggestions */}
