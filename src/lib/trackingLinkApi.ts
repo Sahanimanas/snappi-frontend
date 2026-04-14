@@ -1,7 +1,7 @@
 // lib/trackingLinkApi.ts
 // API functions for tracking links - includes public endpoints for influencer submissions
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper to get auth token
 const getToken = (): string | null => {

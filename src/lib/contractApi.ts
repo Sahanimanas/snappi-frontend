@@ -2,7 +2,7 @@
  * Contract API Service
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getToken = (): string | null => localStorage.getItem('snappi_user_token');
 
