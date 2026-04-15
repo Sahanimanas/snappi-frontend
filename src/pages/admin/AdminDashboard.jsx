@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { removeAdminToken, getStoredAdmin } from '@/lib/api';
 import AdminInfluencers from './AdminInfluencers';
@@ -7,8 +7,17 @@ import AdminKeywords from './AdminKeywords';
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('influencers');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+  );
   const navigate = useNavigate();
   const admin = getStoredAdmin();
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const handleLogout = () => {
     removeAdminToken();
@@ -47,18 +56,24 @@ const AdminDashboard = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 p-4 flex flex-col z-50 shadow-lg md:shadow-none transform transition-transform duration-200 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0`}
+        className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 p-4 flex flex-col z-50 shadow-lg md:shadow-none transition-transform duration-200"
+        style={{
+          transform: isDesktop || sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        }}
       >
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-black">Snappi Admin</h1>
           <button
-            onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 text-black"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSidebarOpen(false);
+            }}
+            className="md:hidden p-2 -mr-2 text-black rounded hover:bg-gray-100 relative z-10"
             aria-label="Close menu"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
