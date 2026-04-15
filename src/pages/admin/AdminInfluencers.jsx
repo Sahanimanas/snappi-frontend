@@ -95,17 +95,17 @@ const AdminInfluencers = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Influencer Management</h1>
-          <div className="flex gap-2 sm:gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-black">Influencer Management</h1>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={() => setShowBulkUpload(true)}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full sm:w-auto h-10 px-4 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium inline-flex items-center justify-center"
             >
               Bulk Upload
             </button>
             <button
               onClick={() => setShowForm(true)}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="w-full sm:w-auto h-10 px-4 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium inline-flex items-center justify-center"
             >
               + Add Influencer
             </button>
@@ -116,20 +116,20 @@ const AdminInfluencers = () => {
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-xs sm:text-sm">Total Influencers</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalInfluencers}</p>
+              <p className="text-black text-xs sm:text-sm">Total Influencers</p>
+              <p className="text-xl sm:text-2xl font-bold text-black">{stats.totalInfluencers}</p>
             </div>
             <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-xs sm:text-sm">Verified</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.verifiedCount}</p>
+              <p className="text-black text-xs sm:text-sm">Verified</p>
+              <p className="text-xl sm:text-2xl font-bold text-black">{stats.verifiedCount}</p>
             </div>
             <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-xs sm:text-sm">Platforms</p>
-              <p className="text-xl sm:text-2xl font-bold text-purple-600">{stats.platformStats?.length || 0}</p>
+              <p className="text-black text-xs sm:text-sm">Platforms</p>
+              <p className="text-xl sm:text-2xl font-bold text-black">{stats.platformStats?.length || 0}</p>
             </div>
             <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-xs sm:text-sm">Available</p>
-              <p className="text-xl sm:text-2xl font-bold text-orange-600">
+              <p className="text-black text-xs sm:text-sm">Available</p>
+              <p className="text-xl sm:text-2xl font-bold text-black">
                 {stats.statusBreakdown?.find(s => s._id === 'available')?.count || 0}
               </p>
             </div>
@@ -138,18 +138,18 @@ const AdminInfluencers = () => {
 
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
             <input
               type="text"
               placeholder="Search influencers..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-0 sm:min-w-[200px] h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
             <select
               value={platform}
               onChange={(e) => { setPlatform(e.target.value); setPage(1); }}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
             >
               <option value="">All Platforms</option>
               <option value="instagram">Instagram</option>
@@ -161,7 +161,7 @@ const AdminInfluencers = () => {
             </select>
             <button
               onClick={() => { setSearch(''); setPlatform(''); setPage(1); }}
-              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              className="h-10 px-4 bg-gray-200 text-black rounded-lg hover:bg-gray-300 font-medium inline-flex items-center justify-center"
             >
               Clear
             </button>
@@ -177,13 +177,13 @@ const AdminInfluencers = () => {
             <table className="w-full min-w-[720px]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Influencer</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Platforms</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Followers</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Engagement</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Keywords</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Influencer</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Platforms</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Followers</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Engagement</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Keywords</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-black">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -197,8 +197,8 @@ const AdminInfluencers = () => {
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div>
-                          <p className="font-medium text-gray-800">{inf.name}</p>
-                          <p className="text-sm text-gray-500">{inf.email}</p>
+                          <p className="font-medium text-black">{inf.name}</p>
+                          <p className="text-sm text-black">{inf.email}</p>
                         </div>
                       </div>
                     </td>
@@ -214,8 +214,8 @@ const AdminInfluencers = () => {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-medium">{formatNumber(inf.totalFollowers)}</td>
-                    <td className="px-4 py-3">{inf.avgEngagement?.toFixed(1)}%</td>
+                    <td className="px-4 py-3 font-medium text-black">{formatNumber(inf.totalFollowers)}</td>
+                    <td className="px-4 py-3 text-black">{inf.avgEngagement?.toFixed(1)}%</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap max-w-[150px]">
                         {inf.keywords?.slice(0, 3).map((k, i) => (
@@ -243,16 +243,16 @@ const AdminInfluencers = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleEdit(inf)}
-                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                          className="h-8 px-3 text-sm bg-blue-100 text-black rounded hover:bg-blue-200 font-medium inline-flex items-center justify-center"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(inf._id)}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                          className="h-8 px-3 text-sm bg-red-100 text-black rounded hover:bg-red-200 font-medium inline-flex items-center justify-center"
                         >
                           Delete
                         </button>
@@ -266,22 +266,22 @@ const AdminInfluencers = () => {
           )}
 
           {/* Pagination */}
-          <div className="flex justify-between items-center px-4 py-3 bg-gray-50">
-            <p className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 py-3 bg-gray-50">
+            <p className="text-sm text-black text-center sm:text-left">
               Page {page} of {totalPages}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-center sm:justify-end">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                className="h-9 px-4 border rounded text-black font-medium disabled:opacity-50 inline-flex items-center justify-center"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                className="h-9 px-4 border rounded text-black font-medium disabled:opacity-50 inline-flex items-center justify-center"
               >
                 Next
               </button>

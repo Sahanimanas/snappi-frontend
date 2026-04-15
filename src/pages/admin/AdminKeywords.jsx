@@ -101,10 +101,10 @@ const AdminKeywords = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Keywords Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-black">Keywords Management</h1>
           <button
             onClick={() => { setShowForm(true); setEditingKeyword(null); setFormData({ name: '', displayName: '', description: '', icon: '', color: '#6366f1', isActive: true }); }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base w-full sm:w-auto"
+            className="w-full sm:w-auto h-10 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base font-medium inline-flex items-center justify-center"
           >
             + Add Keyword
           </button>
@@ -114,16 +114,16 @@ const AdminKeywords = () => {
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Total Keywords</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalKeywords}</p>
+              <p className="text-black text-sm">Total Keywords</p>
+              <p className="text-2xl font-bold text-black">{stats.totalKeywords}</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Active Keywords</p>
-              <p className="text-2xl font-bold text-green-600">{stats.activeKeywords}</p>
+              <p className="text-black text-sm">Active Keywords</p>
+              <p className="text-2xl font-bold text-black">{stats.activeKeywords}</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <p className="text-gray-500 text-sm">Total Assignments</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.totalAssignments}</p>
+              <p className="text-black text-sm">Total Assignments</p>
+              <p className="text-2xl font-bold text-black">{stats.totalAssignments}</p>
             </div>
           </div>
         )}
@@ -135,7 +135,7 @@ const AdminKeywords = () => {
             placeholder="Search keywords..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-10 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
         </div>
 
@@ -156,37 +156,37 @@ const AdminKeywords = () => {
                     >
                       {keyword.icon || keyword.displayName?.charAt(0)}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">{keyword.displayName}</h3>
-                      <p className="text-sm text-gray-500">#{keyword.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-black truncate">{keyword.displayName}</h3>
+                      <p className="text-sm text-black truncate">#{keyword.name}</p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded ${keyword.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`px-2 py-1 text-xs rounded font-medium text-black ${keyword.isActive ? 'bg-green-100' : 'bg-gray-100'}`}>
                       {keyword.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   {keyword.description && (
-                    <p className="text-sm text-gray-600 mb-3">{keyword.description}</p>
+                    <p className="text-sm text-black mb-3">{keyword.description}</p>
                   )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-sm text-black">
                       {keyword.influencerCount || 0} influencers
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button
                         onClick={() => handleToggleActive(keyword)}
-                        className={`px-3 py-1 text-xs rounded ${keyword.isActive ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}
+                        className={`h-8 px-3 text-xs rounded font-medium text-black inline-flex items-center justify-center ${keyword.isActive ? 'bg-yellow-100 hover:bg-yellow-200' : 'bg-green-100 hover:bg-green-200'}`}
                       >
                         {keyword.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
                         onClick={() => handleEdit(keyword)}
-                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded"
+                        className="h-8 px-3 text-xs bg-blue-100 text-black rounded font-medium hover:bg-blue-200 inline-flex items-center justify-center"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(keyword._id)}
-                        className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded"
+                        className="h-8 px-3 text-xs bg-red-100 text-black rounded font-medium hover:bg-red-200 inline-flex items-center justify-center"
                       >
                         Delete
                       </button>
