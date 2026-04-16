@@ -1,9 +1,11 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface PricingPlan {
   name: string;
@@ -20,6 +22,20 @@ interface PricingToggleProps {
 
 export const PricingToggle = ({ plans }: PricingToggleProps) => {
   const [isYearly, setIsYearly] = useState(false);
+  const { user } = useAuth();
+
+  const getButtonLabel = (plan: PricingPlan) => {
+    if (!user) {
+      return plan.price === "Free" ? "Start Free" : "Get Started";
+    }
+    // Logged in
+    if (plan.price === "Free") {
+      return "Current Plan";
+    }
+    return "Upgrade";
+  };
+
+  const isCurrentPlan = (plan: PricingPlan) => user && plan.price === "Free";
 
   return (
     <div className="space-y-8">
@@ -52,6 +68,9 @@ export const PricingToggle = ({ plans }: PricingToggleProps) => {
               {plan.highlighted && (
                 <Badge className="mx-auto mb-4">Most Popular</Badge>
               )}
+              {isCurrentPlan(plan) && (
+                <Badge variant="outline" className="mx-auto mb-4 bg-success/10 text-success border-success/20">Active</Badge>
+              )}
               <CardTitle className="text-2xl">{plan.name}</CardTitle>
               <div className="space-y-2">
                 <div className="text-4xl font-bold">
@@ -75,9 +94,17 @@ export const PricingToggle = ({ plans }: PricingToggleProps) => {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                {plan.price === "Free" ? "Start Free" : "Get Started"}
-              </Button>
+              {isCurrentPlan(plan) ? (
+                <Button className="w-full" variant="outline" disabled>
+                  Current Plan
+                </Button>
+              ) : (
+                <Button className="w-full" variant={plan.highlighted ? "default" : "outline"} asChild>
+                  <Link to={user ? "/dashboard" : "/signup"}>
+                    {getButtonLabel(plan)}
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}

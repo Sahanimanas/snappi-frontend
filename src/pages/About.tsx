@@ -8,9 +8,9 @@ export const About = () => {
     <div className="min-h-screen bg-background">
       <Header isLandingPage={true} />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <section className="py-10 md:py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4 text-center">
             <Badge variant="secondary" className="mb-4">
               About Snappi
@@ -28,7 +28,7 @@ export const About = () => {
         </section>
 
         {/* Mission & Vision */}
-        <section className="py-20">
+        <section className="py-10 md:py-14">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
@@ -71,7 +71,7 @@ export const About = () => {
         </section>
 
         {/* Story Section */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-10 md:py-14 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl font-bold mb-8">Our Story</h2>
@@ -99,7 +99,7 @@ export const About = () => {
         </section>
 
         {/* Values Section */}
-        <section className="py-20">
+        <section className="py-10 md:py-14">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Our Values</h2>
             <div className="grid md:grid-cols-3 gap-8">

@@ -42,8 +42,10 @@ import {
   MessageSquare,
   Clock,
   Link2,
+  Star,
 } from "lucide-react";
 import { SendContractDialog } from "@/components/SendContractDialog";
+import { ReviewDialog } from "@/components/reviews/ReviewDialog";
 import { contractsAPI } from "@/lib/contractApi";
 import { campaignsAPI, Campaign, Influencer, formatNumber } from "@/lib/api";
 import { trackingLinkAPI } from "@/lib/trackingLinkApi";
@@ -109,6 +111,10 @@ export const CampaignDetail = () => {
   }>>({});
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [contractInfluencer, setContractInfluencer] = useState<any>(null);
+
+  // Review states
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewInfluencer, setReviewInfluencer] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -577,6 +583,15 @@ export const CampaignDetail = () => {
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setReviewInfluencer(inf); setReviewDialogOpen(true); }}
+                              className="gap-1.5"
+                            >
+                              <Star className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Review</span>
+                            </Button>
                             {!contractStatuses[inf._id] && (
                               <Button
                                 variant="outline"
@@ -858,6 +873,17 @@ export const CampaignDetail = () => {
           campaignId={id}
           campaignName={campaign?.name}
           onSuccess={fetchContractStatuses}
+        />
+      )}
+
+      {reviewInfluencer && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onClose={() => { setReviewDialogOpen(false); setReviewInfluencer(null); }}
+          campaignId={id!}
+          influencerId={reviewInfluencer._id}
+          influencerName={reviewInfluencer.name}
+          campaignName={campaign?.name || ""}
         />
       )}
     </div>

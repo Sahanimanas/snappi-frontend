@@ -1,10 +1,12 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Star } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const plans = [
   {
@@ -62,14 +64,15 @@ const plans = [
 
 export const Pricing = () => {
   const [isYearly, setIsYearly] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
       <Header isLandingPage={true} />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <section className="py-10 md:py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4 text-center">
             <Badge variant="secondary" className="mb-4">
               Pricing Plans
@@ -126,8 +129,11 @@ export const Pricing = () => {
                       </Badge>
                     </div>
                   )}
-                  
+
                   <CardHeader className="text-center">
+                    {user && plan.price === "Free" && (
+                      <Badge variant="outline" className="mx-auto mb-2 bg-success/10 text-success border-success/20">Active</Badge>
+                    )}
                     <CardTitle className="text-2xl">{plan.name}</CardTitle>
                     <div className="space-y-2">
                       <div className="text-3xl font-bold text-primary">
@@ -158,12 +164,21 @@ export const Pricing = () => {
                       ))}
                     </ul>
                     
-                    <Button 
-                      className={`mt-6 w-full ${plan.popular ? 'bg-primary' : ''}`}
-                      variant={plan.popular ? 'default' : 'outline'}
-                    >
-                      {plan.cta}
-                    </Button>
+                    {user && plan.price === "Free" ? (
+                      <Button className="mt-6 w-full" variant="outline" disabled>
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button
+                        className={`mt-6 w-full ${plan.popular ? 'bg-primary' : ''}`}
+                        variant={plan.popular ? 'default' : 'outline'}
+                        asChild
+                      >
+                        <Link to={user ? "/dashboard" : "/signup"}>
+                          {user ? "Upgrade" : plan.cta}
+                        </Link>
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}

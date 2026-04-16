@@ -105,9 +105,9 @@ export const FAQ = () => {
     <div className="min-h-screen bg-background">
       <Header isLandingPage={true} />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <section className="py-10 md:py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4 text-center">
             <Badge variant="secondary" className="mb-4">
               Help Center
@@ -125,7 +125,7 @@ export const FAQ = () => {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-20">
+        <section className="py-10 md:py-14">
           <div className="container mx-auto px-4 max-w-4xl">
             {faqs.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-12">
@@ -154,7 +154,7 @@ export const FAQ = () => {
         </section>
 
         {/* Contact Support */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-10 md:py-14 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-4">Still have questions?</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">

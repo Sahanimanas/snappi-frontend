@@ -522,6 +522,34 @@ export const formatNumber = (num: number): string => {
   return num.toString();
 };
 
+// ==================== REVIEWS API ====================
+
+export interface Review {
+  _id: string;
+  campaign: { _id: string; name: string } | string;
+  influencer: string;
+  reviewer: { _id: string; name: string } | string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const reviewsAPI = {
+  create: async (data: { campaign: string; influencer: string; rating: number; comment?: string }) => {
+    return apiRequest<Review>('/reviews', { method: 'POST', body: JSON.stringify(data) });
+  },
+  getForInfluencer: async (influencerId: string) => {
+    return apiRequest<Review[]>(`/reviews/influencer/${influencerId}`);
+  },
+  getMy: async (campaignId: string, influencerId: string) => {
+    return apiRequest<Review>(`/reviews/my/${campaignId}/${influencerId}`);
+  },
+  delete: async (id: string) => {
+    return apiRequest(`/reviews/${id}`, { method: 'DELETE' });
+  }
+};
+
 export default {
   auth: authAPI,
   admin: adminAPI,
@@ -529,4 +557,5 @@ export default {
   influencers: influencersAPI,
   campaigns: campaignsAPI,
   dashboard: dashboardAPI,
+  reviews: reviewsAPI,
 };

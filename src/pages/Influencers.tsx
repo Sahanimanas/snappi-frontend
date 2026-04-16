@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Plus,
   Briefcase,
+  Star,
 } from "lucide-react";
 import { influencersAPI, Influencer, Platform, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -91,11 +92,12 @@ const PlatformIconLink = ({ platform }: { platform: Platform }) => {
       href={platform.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${getColor(platform.platform)} transition-colors inline-flex items-center`}
+      className={`${getColor(platform.platform)} transition-colors inline-flex items-center gap-1.5 hover:underline`}
       title={`@${platform.username} on ${platform.platform} (${formatNumber(platform.followers)} followers)`}
       onClick={(e) => e.stopPropagation()}
     >
       {getIcon(platform.platform)}
+      <span className="text-xs truncate max-w-[120px]">@{platform.username}</span>
     </a>
   );
 };
@@ -246,18 +248,23 @@ export const Influencers = () => {
 
   const handleContactClick = (influencer: Influencer) => {
     const email = influencer.email || influencer.contactInfo?.email;
-    if (!email) {
-      toast({
-        title: "No contact info",
-        description: "No email available for this influencer.",
-        variant: "destructive",
-      });
+    if (email) {
+      const subject = `Collaboration Opportunity`;
+      const body = `Hi ${influencer.name},\n\nWe would love to collaborate with you.`;
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(gmailUrl, "_blank");
       return;
     }
-    const subject = `Collaboration Opportunity`;
-    const body = `Hi ${influencer.name},\n\nWe would love to collaborate with you.`;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(gmailUrl, "_blank");
+    const platform = influencer.platforms?.find(p => p.profileUrl);
+    if (platform) {
+      window.open(platform.profileUrl, "_blank");
+      return;
+    }
+    toast({
+      title: "No contact info",
+      description: "No email or social media profile available for this influencer.",
+      variant: "destructive",
+    });
   };
 
   const handleAddToShortlist = (influencer: Influencer) => {
@@ -296,8 +303,8 @@ export const Influencers = () => {
                 )}
               </div>
 
-              {/* Platform Icons */}
-              <div className="flex items-center gap-3 mt-2">
+              {/* Platform Links */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
                 {influencer.platforms?.map((p) => (
                   <PlatformIconLink key={p._id || p.platform} platform={p} />
                 ))}
@@ -376,6 +383,19 @@ export const Influencers = () => {
                   {influencer.platformCount || influencer.platforms?.length || 0}
                 </p>
                 <p className="text-xs text-muted-foreground">Platforms</p>
+              </div>
+            )}
+            {influencer.rating?.count > 0 && (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <p className="text-2xl font-bold">
+                    {influencer.rating.average.toFixed(1)}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Rating ({influencer.rating.count})
+                </p>
               </div>
             )}
           </div>

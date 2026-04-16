@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
 import { Header } from "@/components/layout/Header";
+import { useAuth } from "@/context/AuthContext";
 import { PricingToggle } from "@/components/pricing/PricingToggle";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -16,10 +17,7 @@ import {
   ArrowRight,
   Star,
   TrendingUp,
-  PlayCircle,
-  Sparkles,
   Rocket,
-  Globe,
   Heart,
   Award
 } from "lucide-react";
@@ -104,16 +102,17 @@ const testimonials = [
 ];
 
 export const Landing = () => {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-page-bg">
       <Header isLandingPage />
-      
+
       {/* Slogan Section */}
-      <section className="relative py-8 bg-gradient-to-r from-background/40 via-primary/5 to-background/40 backdrop-blur-sm border-b border-border/20">
+      <section className="relative py-3 bg-gradient-to-r from-background/40 via-primary/5 to-background/40 backdrop-blur-sm border-b border-border/20">
         <div className="container">
           <div className="text-center animate-fade-in">
             <p className="text-lg md:text-xl font-medium text-muted-foreground/80 tracking-wider uppercase">
-              Make Every Campaign 
+              Make Every Campaign
               <span className="bg-gradient-hero bg-clip-text text-transparent font-bold ml-2">
                 Snappi
               </span>
@@ -121,18 +120,18 @@ export const Landing = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
         </div>
-        
-        <div className="container relative py-32 md:py-40">
-          <div className="text-center space-y-8 animate-fade-in">
-            
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tight leading-tight">
+
+        <div className="container relative pt-6 pb-8 md:pt-8 md:pb-10">
+          <div className="text-center space-y-4 animate-fade-in">
+
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight leading-tight">
               The All-in-One
               <br />
               <span className="bg-gradient-hero bg-clip-text text-transparent relative">
@@ -152,41 +151,46 @@ export const Landing = () => {
               Everything you need for influencer marketing in one place, saving you an average of <span className="font-semibold text-primary">15 hours per week</span> and <span className="font-semibold text-primary">$1000 per month</span> compared to competitors.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
-              <Button size="xl" variant="hero" className="group shadow-2xl shadow-primary/25" asChild>
-                <Link to="/signup">
-                  <Rocket className="mr-2 h-5 w-5 group-hover:animate-bounce" />
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button size="xl" variant="glass" className="group" asChild>
-                <Link to="/demo">
-                  <PlayCircle className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                  Watch Demo
-                </Link>
-              </Button>
+            <div className="flex justify-center items-center pt-4">
+              {user ? (
+                <Button size="xl" variant="hero" className="group shadow-2xl shadow-primary/25" asChild>
+                  <Link to="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="xl" variant="hero" className="group shadow-2xl shadow-primary/25" asChild>
+                  <Link to="/signup">
+                    <Rocket className="mr-2 h-5 w-5 group-hover:animate-bounce" />
+                    Start Free Trial
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              )}
             </div>
-            
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground pt-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>No credit card required</span>
+
+            {!user && (
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground pt-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                  <span>No credit card required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                  <span>Free trial included</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Free trial included</span>
-              </div>
-            </div>
+            )}
             
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="relative py-32">
+      <section className="relative py-8 md:py-12">
         <div className="container">
-          <div className="text-center space-y-6 mb-20">
+          <div className="text-center space-y-6 mb-12">
             <Badge variant="secondary" className="px-4 py-2">
               <Zap className="h-3 w-3 mr-1" />
               Core Features
@@ -235,7 +239,7 @@ export const Landing = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="relative py-24">
+      <section className="relative py-6 md:py-10">
         <div className="container">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             <div className="group space-y-4 p-6 rounded-2xl hover:bg-background/50 transition-all duration-300 hover:scale-105">
@@ -275,8 +279,8 @@ export const Landing = () => {
       </section>
 
       {/* Comparison Section */}
-      <section className="container py-32">
-        <div className="text-center space-y-6 mb-16">
+      <section className="container py-8 md:py-12">
+        <div className="text-center space-y-6 mb-10">
           <Badge variant="secondary" className="px-4 py-2">
             <BarChart3 className="h-3 w-3 mr-1" />
             Comparison
@@ -446,8 +450,8 @@ export const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section className="container py-24 bg-background">
-        <div className="text-center space-y-6 mb-16">
+      <section className="container py-8 md:py-10 bg-background">
+        <div className="text-center space-y-6 mb-10">
           <Badge variant="secondary">Pricing</Badge>
           <h2 className="text-3xl md:text-5xl font-bold">
             Simple, transparent pricing
@@ -461,8 +465,8 @@ export const Landing = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container py-32 bg-background">
-        <div className="text-center space-y-6 mb-20">
+      <section className="container py-8 md:py-12 bg-background">
+        <div className="text-center space-y-6 mb-10">
           <Badge variant="secondary" className="px-4 py-2">
             <Award className="h-3 w-3 mr-1" />
             Testimonials
@@ -522,7 +526,7 @@ export const Landing = () => {
           <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
         </div>
         
-        <div className="container relative py-32 text-center text-primary-foreground">
+        <div className="container relative py-16 md:py-20 text-center text-primary-foreground">
           <div className="space-y-8 max-w-4xl mx-auto">
             
             <h2 className="text-4xl md:text-6xl font-bold leading-tight">
@@ -536,29 +540,40 @@ export const Landing = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center pt-6">
-              <Button size="xl" variant="secondary" className="group shadow-2xl shadow-black/25" asChild>
-                <Link to="/signup">
-                  <Rocket className="mr-2 h-5 w-5 group-hover:animate-bounce" />
-                  Start Your Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+              {user ? (
+                <Button size="xl" variant="secondary" className="group shadow-2xl shadow-black/25" asChild>
+                  <Link to="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="xl" variant="secondary" className="group shadow-2xl shadow-black/25" asChild>
+                  <Link to="/signup">
+                    <Rocket className="mr-2 h-5 w-5 group-hover:animate-bounce" />
+                    Start Your Free Trial
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              )}
             </div>
-            
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-primary-foreground/80 pt-8">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>7-day free trial</span>
+
+            {!user && (
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-primary-foreground/80 pt-8">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>7-day free trial</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Cancel anytime</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Setup in 5 minutes</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Cancel anytime</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Setup in 5 minutes</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -603,7 +618,7 @@ export const Landing = () => {
         </div>
         
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 Snappi. All rights reserved.</p>
+          <p>&copy; 2026 Snappi. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -172,7 +172,7 @@ const InfluencerCard = ({
           </div>
 
           {/* Stats */}
-          <div className="flex-1 grid grid-cols-3 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8">
+          <div className="flex-1 grid grid-cols-4 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8">
             <div className="text-center min-w-0">
               <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
                 {formatNumber(influencer.totalFollowers || 0)}
@@ -191,6 +191,19 @@ const InfluencerCard = ({
               </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Platforms</p>
             </div>
+            {influencer.rating?.count > 0 && (
+              <div className="text-center min-w-0">
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+                    {influencer.rating.average.toFixed(1)}
+                  </p>
+                </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  Rating ({influencer.rating.count})
+                </p>
+              </div>
+            )}
             {/* Platform Icons */}
             {influencer.platforms && influencer.platforms.length > 0 && (
               <div className="col-span-3 lg:col-span-1 flex items-center justify-center flex-wrap gap-2">
@@ -405,18 +418,24 @@ export const SearchInfluencers = () => {
 
   const handleContact = (influencer: Influencer) => {
     const email = influencer.email || influencer.contactInfo?.email;
-    if (!email) {
-      toast({
-        title: "No contact info",
-        description: "No email available for this influencer.",
-        variant: "destructive",
-      });
+    if (email) {
+      const subject = `Collaboration Opportunity`;
+      const body = `Hi ${influencer.name},\n\nWe would love to collaborate with you.`;
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(gmailUrl, "_blank");
       return;
     }
-    const subject = `Collaboration Opportunity`;
-    const body = `Hi ${influencer.name},\n\nWe would love to collaborate with you.`;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(gmailUrl, "_blank");
+    // No email — redirect to first available platform profile
+    const platform = influencer.platforms?.find(p => p.profileUrl);
+    if (platform) {
+      window.open(platform.profileUrl, "_blank");
+      return;
+    }
+    toast({
+      title: "No contact info",
+      description: "No email or social media profile available for this influencer.",
+      variant: "destructive",
+    });
   };
 
   // Load initial results on mount

@@ -74,9 +74,9 @@ export const Features = () => {
     <div className="min-h-screen bg-background">
       <Header isLandingPage={true} />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <section className="py-10 md:py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4 text-center">
             <Badge variant="secondary" className="mb-4">
               Platform Features
@@ -94,7 +94,7 @@ export const Features = () => {
         </section>
 
         {/* Features Grid */}
-        <section className="py-20">
+        <section className="py-10 md:py-14">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature, index) => (
