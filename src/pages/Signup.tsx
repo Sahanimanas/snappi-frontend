@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OnboardingFlow, OnboardingData } from "@/components/onboarding/OnboardingFlow";
 import { authAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'signup' | 'onboarding'>('signup');
@@ -73,8 +75,8 @@ export const Signup = () => {
       toast({
         title: "Account created!",
         description: referralCode
-          ? "Welcome aboard 🎉 Your 20% referral discount has been applied."
-          : "Welcome aboard 🎉",
+          ? "Welcome aboard! Your 20% referral discount has been applied."
+          : "Welcome aboard!",
       });
       // Increment the referrer's local counter (best-effort, client-side)
       if (referralCode) {
@@ -83,7 +85,9 @@ export const Signup = () => {
         localStorage.setItem(key, String(current + 1));
         localStorage.removeItem("snappi_pending_ref");
       }
-      setStep("onboarding");
+      // Auto-login: refresh auth context and navigate to dashboard
+      await refreshUser();
+      navigate("/dashboard");
     }
 
     setLoading(false);

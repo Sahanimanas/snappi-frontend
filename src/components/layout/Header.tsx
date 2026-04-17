@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
-import { Search, Menu, Bell, User, LogOut, Loader2, Users, Megaphone } from "lucide-react";
+import { Search, Menu, X, Bell, User, LogOut, Loader2, Users, Megaphone } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
@@ -102,58 +102,130 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
 
   const hasResults = influencerResults.length > 0 || campaignResults.length > 0;
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/features", label: "Features" },
+    { to: "/pricing", label: "Pricing" },
+    { to: "/about", label: "About" },
+    { to: "/faq", label: "FAQ" },
+  ];
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   if (isLandingPage) {
     return (
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="w-full px-4 md:px-6 flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <Logo textSize="xl" iconSize={20} />
-          </Link>
+      <>
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+          <div className="w-full px-4 md:px-6 flex h-16 items-center justify-between">
+            <Link to="/" className="flex items-center">
+              <Logo textSize="xl" iconSize={20} />
+            </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
-            {[
-              { to: "/features", label: "Features" },
-              { to: "/pricing", label: "Pricing" },
-              { to: "/about", label: "About" },
-              { to: "/faq", label: "FAQ" },
-            ].map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`text-sm font-medium transition-colors ${
-                  location.pathname === link.to
-                    ? "text-primary border-b-2 border-primary pb-0.5"
-                    : "hover:text-primary"
-                }`}
+            <nav className="hidden md:flex items-center space-x-6">
+              {navLinks.filter(l => l.to !== "/").map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`text-sm font-medium transition-colors ${
+                    location.pathname === link.to
+                      ? "text-primary border-b-2 border-primary pb-0.5"
+                      : "hover:text-primary"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="flex items-center space-x-3">
+              {user ? (
+                <>
+                  <span className="hidden sm:inline text-sm text-muted-foreground">
+                    Hi, {user.name?.split(" ")[0] || "there"}
+                  </span>
+                  <Button size="sm" asChild>
+                    <Link to="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                    <Link to="/signin">Sign In</Link>
+                  </Button>
+                  <Button size="sm" asChild className="hidden sm:inline-flex">
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center space-x-3">
-            {user ? (
-              <>
-                <span className="hidden sm:inline text-sm text-muted-foreground">
-                  Hi, {user.name?.split(" ")[0] || "there"}
-                </span>
-                <Button size="sm" asChild>
-                  <Link to="/dashboard">Go to Dashboard</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/signin">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-              </>
-            )}
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <>
+            <div
+              className="md:hidden fixed inset-0 bg-black/40 z-40"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="md:hidden fixed top-[4.5rem] right-3 w-60 h-auto max-h-[calc(100vh-5rem)] bg-white/70 backdrop-blur-xl border border-white/30 shadow-2xl rounded-2xl z-50 animate-in slide-in-from-right duration-200">
+              <nav className="flex flex-col p-4 space-y-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      location.pathname === link.to
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <div className="border-t my-2" />
+                {user ? (
+                  <Link
+                    to="/dashboard"
+                    className="px-4 py-3 rounded-lg text-sm font-medium bg-primary text-white text-center"
+                  >
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/signin"
+                      className="px-4 py-3 rounded-lg text-sm font-medium hover:bg-muted text-center"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="px-4 py-3 rounded-lg text-sm font-medium bg-primary text-white text-center"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </nav>
+            </div>
+          </>
+        )}
+      </>
     );
   }
 
@@ -174,9 +246,6 @@ export const Header = ({ isLandingPage = false }: HeaderProps) => {
 
         {/* Right section */}
         <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
 
           <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title="Settings">
             <User className="h-5 w-5" />

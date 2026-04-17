@@ -48,6 +48,12 @@ export const Signin = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-background/80 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <Link
+            to="/"
+            className="w-fit mx-auto mb-2 text-sm text-muted-foreground hover:text-primary hover:underline transition-colors"
+          >
+            Home
+          </Link>
           <CardTitle className="text-2xl font-bold text-gray-900">
             Welcome Back
           </CardTitle>
