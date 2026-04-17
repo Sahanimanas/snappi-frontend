@@ -33,6 +33,7 @@ import {
   X,
   TrendingUp,
   Star,
+  MessageSquare,
 } from "lucide-react";
 import { influencersAPI, Influencer, Platform, SearchFilters, formatNumber } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -100,11 +101,12 @@ const PlatformIconLink = ({ platform }: { platform: Platform }) => {
       href={platform.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${getColor(platform.platform)} transition-colors inline-flex items-center`}
+      className={`${getColor(platform.platform)} transition-colors inline-flex items-center gap-1.5 hover:underline`}
       title={`@${platform.username} on ${platform.platform} (${formatNumber(platform.followers)} followers)`}
       onClick={(e) => e.stopPropagation()}
     >
       {getIcon(platform.platform)}
+      <span className="text-xs truncate max-w-[120px]">@{platform.username}</span>
     </a>
   );
 };
@@ -143,7 +145,7 @@ const InfluencerCard = ({
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
           {/* Avatar + Info */}
-          <div className="flex items-center gap-3 sm:gap-4 lg:min-w-[260px] min-w-0">
+          <div className="flex items-start gap-3 sm:gap-4 lg:min-w-[260px] min-w-0">
             <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-muted flex-shrink-0">
               <AvatarImage src={influencer.profileImage} alt={influencer.name} />
               <AvatarFallback className="text-base sm:text-lg font-bold bg-primary/10 text-primary">
@@ -168,34 +170,42 @@ const InfluencerCard = ({
                   <span className="truncate">{[influencer.location.city, influencer.location.country].filter(Boolean).join(", ")}</span>
                 </p>
               )}
+              {/* Platform Icons on mobile */}
+              {influencer.platforms && influencer.platforms.length > 0 && (
+                <div className="flex items-center flex-wrap gap-2 mt-2 lg:hidden">
+                  {influencer.platforms.map((p, idx) => (
+                    <PlatformIconLink key={idx} platform={p} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex-1 grid grid-cols-4 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8 pt-3 border-t lg:border-t-0 lg:pt-0">
             <div className="text-center min-w-0">
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+              <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                 {formatNumber(influencer.totalFollowers || 0)}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Followers</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Followers</p>
             </div>
             <div className="text-center min-w-0">
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 truncate">
+              <p className="text-base sm:text-lg lg:text-2xl font-bold text-green-600 truncate">
                 {(influencer.avgEngagement || 0).toFixed(1)}%
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Avg Engagement</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Engagement</p>
             </div>
             <div className="text-center min-w-0">
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+              <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                 {influencer.platformCount || influencer.platforms?.length || 0}
               </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Platforms</p>
             </div>
-            {influencer.rating?.count > 0 && (
+            {influencer.rating?.count > 0 ? (
               <div className="text-center min-w-0">
                 <div className="flex items-center justify-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <p className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                  <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                     {influencer.rating.average.toFixed(1)}
                   </p>
                 </div>
@@ -203,10 +213,19 @@ const InfluencerCard = ({
                   Rating ({influencer.rating.count})
                 </p>
               </div>
+            ) : (
+              /* Platform Icons (tablet+) */
+              influencer.platforms && influencer.platforms.length > 0 && (
+                <div className="hidden sm:flex lg:hidden items-center justify-center flex-wrap gap-2">
+                  {influencer.platforms.map((p, idx) => (
+                    <PlatformIconLink key={idx} platform={p} />
+                  ))}
+                </div>
+              )
             )}
-            {/* Platform Icons */}
+            {/* Platform Icons on desktop */}
             {influencer.platforms && influencer.platforms.length > 0 && (
-              <div className="col-span-3 lg:col-span-1 flex items-center justify-center flex-wrap gap-2">
+              <div className="hidden lg:flex items-center justify-center flex-wrap gap-2">
                 {influencer.platforms.map((p, idx) => (
                   <PlatformIconLink key={idx} platform={p} />
                 ))}
@@ -215,12 +234,13 @@ const InfluencerCard = ({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[150px]">
-            <Button size="sm" className="flex-1 lg:flex-none" onClick={() => onAddToShortlist(influencer)}>
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[150px] pt-2 lg:pt-0 border-t lg:border-t-0">
+            <Button size="sm" className="w-full" onClick={() => onAddToShortlist(influencer)}>
               <Plus className="h-4 w-4 mr-1.5" />
               <span className="text-xs sm:text-sm">Add to Shortlist</span>
             </Button>
-            <Button size="sm" variant="outline" className="flex-1 lg:flex-none" onClick={() => onContact(influencer)}>
+            <Button size="sm" variant="outline" className="w-full" onClick={() => onContact(influencer)}>
+              <MessageSquare className="h-4 w-4 mr-1.5" />
               <span className="text-xs sm:text-sm">Contact</span>
             </Button>
           </div>

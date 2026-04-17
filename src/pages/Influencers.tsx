@@ -285,26 +285,26 @@ export const Influencers = () => {
       key={influencer._id}
       className="border hover:border-primary/40 hover:shadow-md transition-all"
     >
-      <CardContent className="p-5">
-        <div className="flex items-center gap-6">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
           {/* Avatar + Info */}
-          <div className="flex items-center gap-4 min-w-[320px]">
-            <Avatar className="h-14 w-14 border-2 border-muted">
+          <div className="flex items-start gap-3 sm:gap-4 lg:min-w-[280px] min-w-0">
+            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-muted flex-shrink-0">
               <AvatarImage src={influencer.profileImage} alt={influencer.name} />
-              <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-base sm:text-lg font-bold bg-primary/10 text-primary">
                 {influencer.name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold truncate">{influencer.name}</h3>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-semibold truncate">{influencer.name}</h3>
                 {influencer.isVerified && (
-                  <Badge className="bg-blue-500 text-white text-[10px] px-1.5">✓</Badge>
+                  <Badge className="bg-blue-500 text-white text-[10px] px-1.5 flex-shrink-0">✓</Badge>
                 )}
               </div>
 
               {/* Platform Links */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                 {influencer.platforms?.map((p) => (
                   <PlatformIconLink key={p._id || p.platform} platform={p} />
                 ))}
@@ -312,29 +312,31 @@ export const Influencers = () => {
 
               {/* Location */}
               {(influencer.location?.city || influencer.location?.country) && (
-                <div className="flex items-center gap-1 mt-1.5 text-sm text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {[influencer.location.city, influencer.location.country]
-                    .filter(Boolean)
-                    .join(", ")}
+                <div className="flex items-center gap-1 mt-1.5 text-xs sm:text-sm text-muted-foreground truncate">
+                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">
+                    {[influencer.location.city, influencer.location.country]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
                 </div>
               )}
 
               {/* Campaign badges for collaborating tab */}
               {showCampaigns && influencer.campaigns && influencer.campaigns.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
                   {influencer.campaigns.slice(0, 3).map((campaign) => (
-                    <Link 
-                      key={campaign._id} 
+                    <Link
+                      key={campaign._id}
                       to={`/campaigns/${campaign._id}`}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs hover:bg-primary/10 cursor-pointer"
                       >
                         <Briefcase className="h-3 w-3 mr-1" />
-                        {campaign.name}
+                        <span className="truncate max-w-[120px]">{campaign.name}</span>
                       </Badge>
                     </Link>
                   ))}
@@ -349,51 +351,51 @@ export const Influencers = () => {
           </div>
 
           {/* Stats */}
-          <div className="flex-1 flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-2xl font-bold">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8 pt-3 border-t lg:border-t-0 lg:pt-0">
+            <div className="text-center min-w-0">
+              <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                 {formatNumber(influencer.totalFollowers || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">Total Followers</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Followers</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
+            <div className="text-center min-w-0">
+              <p className="text-base sm:text-lg lg:text-2xl font-bold text-green-600 truncate">
                 {Number(influencer.avgEngagement || 0).toFixed(1)}%
               </p>
-              <p className="text-xs text-muted-foreground">Avg Engagement</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Engagement</p>
             </div>
             {showCampaigns ? (
               <>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">
+                <div className="text-center min-w-0">
+                  <p className="text-base sm:text-lg lg:text-2xl font-bold text-purple-600 truncate">
                     {influencer.totalCampaigns || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground">Campaigns</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Campaigns</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">
+                <div className="text-center min-w-0">
+                  <p className="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 truncate">
                     {influencer.activeCampaigns || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground">Active</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Active</p>
                 </div>
               </>
             ) : (
-              <div className="text-center">
-                <p className="text-2xl font-bold">
+              <div className="text-center min-w-0">
+                <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                   {influencer.platformCount || influencer.platforms?.length || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Platforms</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Platforms</p>
               </div>
             )}
             {influencer.rating?.count > 0 && (
-              <div className="text-center">
+              <div className="text-center min-w-0">
                 <div className="flex items-center justify-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <p className="text-2xl font-bold">
+                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                  <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
                     {influencer.rating.average.toFixed(1)}
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   Rating ({influencer.rating.count})
                 </p>
               </div>
@@ -401,37 +403,41 @@ export const Influencers = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-2 min-w-[150px]">
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:min-w-[150px] pt-2 lg:pt-0 border-t lg:border-t-0">
             {showCampaigns ? (
               <>
-                <Button 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
                   onClick={() => handleContactClick(influencer)}
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Contact
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs sm:text-sm">Contact</span>
                 </Button>
                 {influencer.campaigns && influencer.campaigns.length > 0 && (
-                  <Button 
+                  <Button
+                    size="sm"
                     variant="ghost"
+                    className="w-full"
                     asChild
                   >
                     <Link to={`/campaigns/${influencer.campaigns[0]._id}`}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Campaign
+                      <Eye className="h-4 w-4 mr-1.5" />
+                      <span className="text-xs sm:text-sm">View Campaign</span>
                     </Link>
                   </Button>
                 )}
               </>
             ) : (
               <>
-                <Button onClick={() => handleAddToShortlist(influencer)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add to Shortlist
+                <Button size="sm" className="w-full" onClick={() => handleAddToShortlist(influencer)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs sm:text-sm">Add to Shortlist</span>
                 </Button>
-                <Button variant="outline" onClick={() => handleContactClick(influencer)}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Contact
+                <Button size="sm" variant="outline" className="w-full" onClick={() => handleContactClick(influencer)}>
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs sm:text-sm">Contact</span>
                 </Button>
               </>
             )}
@@ -447,7 +453,7 @@ export const Influencers = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 w-full p-6 md:p-8 space-y-6 overflow-y-auto">
+        <main className="flex-1 w-full p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

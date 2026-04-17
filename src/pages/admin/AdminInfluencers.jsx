@@ -98,6 +98,20 @@ const AdminInfluencers = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-black">Influencer Management</h1>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
+              onClick={() => {
+                const csv = 'NAME,EMAIL,PLATFORM,PLATFORM USERNAME,PORTFOLIO URL/INSTAGRAM,INSTAGRAM URL,FACEBOOK URL,TIKTOK URL,YOUTUBE URL,FOLLOWERS,ENGAGEMENT RATE,COUNTRY,CITY,STATE,NICHE,VERIFIED\nSample Influencer,sample@email.com,Instagram,sampleuser,https://instagram.com/sampleuser,https://instagram.com/sampleuser,,,,100000,4.5,USA,Los Angeles,,Lifestyle,true';
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'influencers_template.csv';
+                a.click();
+              }}
+              className="w-full sm:w-auto h-10 px-4 text-sm sm:text-base bg-gray-200 text-black rounded-lg hover:bg-gray-300 font-medium inline-flex items-center justify-center"
+            >
+              Download Template
+            </button>
+            <button
               onClick={() => setShowBulkUpload(true)}
               className="w-full sm:w-auto h-10 px-4 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium inline-flex items-center justify-center"
             >
