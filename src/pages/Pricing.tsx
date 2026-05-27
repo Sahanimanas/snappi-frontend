@@ -1,75 +1,14 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-
-const plans = [
-  {
-    name: "Freemium",
-    price: "Free",
-    yearlyPrice: "Free",
-    description: "Perfect for testing the platform",
-    features: [
-      "1 search per day",
-      "View up to 2 influencer profiles",
-      "Basic filters"
-    ],
-    limitations: [
-      "No contact information",
-      "No campaign management",
-      "No analytics"
-    ],
-    cta: "Get Started",
-    popular: false
-  },
-  {
-    name: "Starter",
-    price: "$99/month",
-    yearlyPrice: "$79/month",
-    description: "Ideal for small businesses starting out",
-    features: [
-      "Unlimited searches",
-      "5 active campaigns",
-      "Basic analytics",
-      "Email templates",
-      "Campaign tracking",
-      "Email support"
-    ],
-    cta: "Start Free Trial",
-    popular: true
-  },
-  {
-    name: "Professional",
-    price: "$199/month",
-    yearlyPrice: "$159/month",
-    description: "Best for growing businesses",
-    features: [
-      "Everything in Starter",
-      "Unlimited campaigns",
-      "Advanced analytics & reporting",
-      "Contract management",
-      "Bulk payments",
-      "Team collaboration",
-      "Team priority support"
-    ],
-    cta: "Start Free Trial",
-    popular: false
-  }
-];
+import { PricingToggle } from "@/components/pricing/PricingToggle";
+import { pricingPlans } from "@/components/pricing/pricingPlans";
 
 export const Pricing = () => {
-  const [isYearly, setIsYearly] = useState(false);
-  const { user } = useAuth();
-
   return (
     <div className="min-h-screen bg-background">
       <Header isLandingPage={true} />
-      
+
       <main>
         {/* Hero Section */}
         <section className="py-10 md:py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
@@ -87,103 +26,11 @@ export const Pricing = () => {
           </div>
         </section>
 
-        {/* Pricing Toggle */}
-        <section className="py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center space-x-4">
-              <span className={`text-sm ${!isYearly ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Monthly</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsYearly(!isYearly)}
-                className="relative w-12 h-6 rounded-full p-0 bg-primary"
-              >
-                <div
-                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
-                    isYearly ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </Button>
-              <span className={`text-sm ${isYearly ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                Yearly
-                <Badge variant="outline" className="ml-2 text-xs bg-success/10 text-success border-success/20">Save 2 months</Badge>
-              </span>
-            </div>
-          </div>
-        </section>
-
         {/* Pricing Cards */}
         <section className="py-12">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {plans.map((plan, index) => (
-                <Card 
-                  key={index} 
-                  className={`relative h-full ${plan.popular ? 'border-primary shadow-elegant' : ''}`}
-                >
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground">
-                        <Star className="w-3 h-3 mr-1" />
-                        Most Popular
-                      </Badge>
-                    </div>
-                  )}
+            <PricingToggle plans={pricingPlans} />
 
-                  <CardHeader className="text-center">
-                    {user && plan.price === "Free" && (
-                      <Badge variant="outline" className="mx-auto mb-2 bg-success/10 text-success border-success/20">Active</Badge>
-                    )}
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <div className="space-y-2">
-                      <div className="text-3xl font-bold text-primary">
-                        {isYearly ? plan.yearlyPrice : plan.price}
-                      </div>
-                      {isYearly && plan.price !== "Free" && (
-                        <div className="text-sm text-muted-foreground">
-                          Billed annually
-                        </div>
-                      )}
-                    </div>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="flex-1 flex flex-col">
-                    <ul className="space-y-3 flex-1">
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                      {plan.limitations && plan.limitations.map((limitation, idx) => (
-                        <li key={`limit-${idx}`} className="flex items-start gap-2 text-muted-foreground">
-                          <div className="w-4 h-4 mt-0.5 flex-shrink-0">×</div>
-                          <span className="text-sm">{limitation}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    {user && plan.price === "Free" ? (
-                      <Button className="mt-6 w-full" variant="outline" disabled>
-                        Current Plan
-                      </Button>
-                    ) : (
-                      <Button
-                        className={`mt-6 w-full ${plan.popular ? 'bg-primary' : ''}`}
-                        variant={plan.popular ? 'default' : 'outline'}
-                        asChild
-                      >
-                        <Link to={user ? "/dashboard" : "/signup"}>
-                          {user ? "Upgrade" : plan.cta}
-                        </Link>
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
             {/* FAQ Section */}
             <div className="mt-20 text-center">
               <h3 className="text-2xl font-bold mb-8">Frequently Asked Questions</h3>

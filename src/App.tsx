@@ -17,6 +17,7 @@ import { Features } from "./pages/Features";
 import { Pricing } from "./pages/Pricing";
 import { About } from "./pages/About";
 import { FAQ } from "./pages/FAQ";
+import { Creators } from "./pages/Creators";
 import NotFound from "./pages/NotFound";
 
 // 🔒 Protected pages (User)
@@ -82,6 +83,7 @@ const App = () => {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/creators" element={<Creators />} />
 
               {/* ---------------- ADMIN ROUTES ---------------- */}
               <Route path="/admin/login" element={<AdminLogin />} />

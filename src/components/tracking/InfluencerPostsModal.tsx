@@ -214,23 +214,55 @@ export const InfluencerPostsModal = ({
                       <PlatformIcon platform={post.platform} className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-2">
                         <span className="font-medium capitalize">{post.platform}</span>
                         <Badge variant="outline" className="text-xs capitalize">
                           {post.postType}
                         </Badge>
                         {getStatusBadge(post.status)}
+                        <span className="text-[10px] text-muted-foreground ml-1">
+                          (status applies to draft only)
+                        </span>
                       </div>
-                      <a
-                        href={post.postUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline truncate block"
-                      >
-                        {post.postUrl}
-                      </a>
+
+                      {/* Draft URL */}
+                      <div className="text-sm">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">Draft</span>
+                          <a
+                            href={post.draftUrl || post.postUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline truncate"
+                          >
+                            {post.draftUrl || post.postUrl}
+                          </a>
+                        </div>
+
+                        {/* Final URL — display-only, no approval */}
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">Final</span>
+                          {post.finalUrl ? (
+                            <a
+                              href={post.finalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline truncate"
+                            >
+                              {post.finalUrl}
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">
+                              {post.status === 'approved'
+                                ? 'waiting on influencer to publish and submit final URL'
+                                : 'available after draft is approved'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       {post.caption && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {post.caption}
                         </p>
                       )}
@@ -248,7 +280,8 @@ export const InfluencerPostsModal = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(post.postUrl, "_blank")}
+                      onClick={() => window.open(post.draftUrl || post.postUrl, "_blank")}
+                      title="Open draft"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>

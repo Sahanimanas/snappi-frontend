@@ -492,6 +492,10 @@ export const campaignsAPI = {
 
   addInfluencer: async (campaignId: string, influencerId: string, compensation?: { amount: number; type: string }, trackingLink?: string) => apiRequest(`/campaigns/${campaignId}/influencers`, { method: 'POST', body: JSON.stringify({ influencerId, compensation, trackingLink }) }),
 
+  removeInfluencer: async (campaignId: string, influencerId: string) => apiRequest(`/campaigns/${campaignId}/influencers/${influencerId}`, { method: 'DELETE' }),
+
+  allocateBudget: async (campaignId: string, influencerId: string, amount: number) => apiRequest<any>(`/campaigns/${campaignId}/influencers/${influencerId}/allocate-budget`, { method: 'PUT', body: JSON.stringify({ amount }) }),
+
   getPerformance: async (campaignId: string) => apiRequest<any>(`/campaigns/${campaignId}/performance`, { method: 'GET' }),
 
   getStats: async () => apiRequest<any>('/campaigns/stats/overview', { method: 'GET' }),

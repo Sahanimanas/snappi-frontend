@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
-import { UpgradeCard } from "@/components/upgrade/UpgradeCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -305,7 +304,7 @@ export const Dashboard = () => {
           </div>
 
           {/* Recent Campaigns & Top Influencers */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
             {/* Recent Campaigns */}
             <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -449,10 +448,6 @@ export const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Upgrade Card */}
-            <div className="xl:col-span-1">
-               <UpgradeCard />
-            </div>
           </div>
 
           {/* Referral */}

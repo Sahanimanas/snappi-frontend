@@ -283,28 +283,28 @@ export const Influencers = () => {
   const renderInfluencerCard = (influencer: Influencer, showCampaigns: boolean = false) => (
     <Card
       key={influencer._id}
-      className="border hover:border-primary/40 hover:shadow-md transition-all"
+      className="border hover:border-primary/40 hover:shadow-md transition-all overflow-hidden"
     >
       <CardContent className="p-4 sm:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 min-w-0">
           {/* Avatar + Info */}
-          <div className="flex items-start gap-3 sm:gap-4 lg:min-w-[280px] min-w-0">
-            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-muted flex-shrink-0">
+          <div className="flex items-start gap-3 sm:gap-4 lg:min-w-[240px] min-w-0 w-full lg:w-auto">
+            <Avatar className="h-11 w-11 sm:h-12 sm:w-12 border-2 border-muted flex-shrink-0">
               <AvatarImage src={influencer.profileImage} alt={influencer.name} />
-              <AvatarFallback className="text-base sm:text-lg font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-sm sm:text-base font-bold bg-primary/10 text-primary">
                 {influencer.name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 overflow-hidden">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-semibold truncate">{influencer.name}</h3>
+                <h3 className="text-sm sm:text-base font-semibold truncate max-w-full">{influencer.name}</h3>
                 {influencer.isVerified && (
                   <Badge className="bg-blue-500 text-white text-[10px] px-1.5 flex-shrink-0">✓</Badge>
                 )}
               </div>
 
               {/* Platform Links */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                 {influencer.platforms?.map((p) => (
                   <PlatformIconLink key={p._id || p.platform} platform={p} />
                 ))}
@@ -312,8 +312,8 @@ export const Influencers = () => {
 
               {/* Location */}
               {(influencer.location?.city || influencer.location?.country) && (
-                <div className="flex items-center gap-1 mt-1.5 text-xs sm:text-sm text-muted-foreground truncate">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <div className="flex items-center gap-1 mt-1.5 text-[11px] sm:text-xs text-muted-foreground truncate">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">
                     {[influencer.location.city, influencer.location.country]
                       .filter(Boolean)
@@ -333,15 +333,15 @@ export const Influencers = () => {
                     >
                       <Badge
                         variant="outline"
-                        className="text-xs hover:bg-primary/10 cursor-pointer"
+                        className="text-[10px] sm:text-xs hover:bg-primary/10 cursor-pointer"
                       >
                         <Briefcase className="h-3 w-3 mr-1" />
-                        <span className="truncate max-w-[120px]">{campaign.name}</span>
+                        <span className="truncate max-w-[100px] sm:max-w-[120px]">{campaign.name}</span>
                       </Badge>
                     </Link>
                   ))}
                   {influencer.campaigns.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs">
                       +{influencer.campaigns.length - 3} more
                     </Badge>
                   )}
@@ -351,51 +351,51 @@ export const Influencers = () => {
           </div>
 
           {/* Stats */}
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center lg:justify-center gap-3 sm:gap-4 lg:gap-8 pt-3 border-t lg:border-t-0 lg:pt-0">
-            <div className="text-center min-w-0">
-              <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
+          <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center lg:justify-center gap-2 sm:gap-3 lg:gap-6 pt-3 border-t lg:border-t-0 lg:pt-0">
+            <div className="text-center min-w-0 overflow-hidden">
+              <p className="text-sm sm:text-base lg:text-lg font-bold truncate">
                 {formatNumber(influencer.totalFollowers || 0)}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Followers</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Followers</p>
             </div>
-            <div className="text-center min-w-0">
-              <p className="text-base sm:text-lg lg:text-2xl font-bold text-green-600 truncate">
+            <div className="text-center min-w-0 overflow-hidden">
+              <p className="text-sm sm:text-base lg:text-lg font-bold text-green-600 truncate">
                 {Number(influencer.avgEngagement || 0).toFixed(1)}%
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Engagement</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Engagement</p>
             </div>
             {showCampaigns ? (
               <>
-                <div className="text-center min-w-0">
-                  <p className="text-base sm:text-lg lg:text-2xl font-bold text-purple-600 truncate">
+                <div className="text-center min-w-0 overflow-hidden">
+                  <p className="text-sm sm:text-base lg:text-lg font-bold text-purple-600 truncate">
                     {influencer.totalCampaigns || 0}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Campaigns</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Campaigns</p>
                 </div>
-                <div className="text-center min-w-0">
-                  <p className="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 truncate">
+                <div className="text-center min-w-0 overflow-hidden">
+                  <p className="text-sm sm:text-base lg:text-lg font-bold text-blue-600 truncate">
                     {influencer.activeCampaigns || 0}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Active</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Active</p>
                 </div>
               </>
             ) : (
-              <div className="text-center min-w-0">
-                <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
+              <div className="text-center min-w-0 overflow-hidden">
+                <p className="text-sm sm:text-base lg:text-lg font-bold truncate">
                   {influencer.platformCount || influencer.platforms?.length || 0}
                 </p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Platforms</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Platforms</p>
               </div>
             )}
             {influencer.rating?.count > 0 && (
-              <div className="text-center min-w-0">
+              <div className="text-center min-w-0 overflow-hidden">
                 <div className="flex items-center justify-center gap-1">
-                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
-                  <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
+                  <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                  <p className="text-sm sm:text-base lg:text-lg font-bold truncate">
                     {influencer.rating.average.toFixed(1)}
                   </p>
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                   Rating ({influencer.rating.count})
                 </p>
               </div>
@@ -587,10 +587,13 @@ export const Influencers = () => {
           <Card className="shadow-sm">
             <CardContent className="p-5">
               <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="h-11 mb-6">
-                  <TabsTrigger value="all" className="px-6">All ({total})</TabsTrigger>
-                  <TabsTrigger value="collaborating" className="px-6">Collaborating ({collaboratingTotal})</TabsTrigger>
-                  <TabsTrigger value="favorites" className="px-6">Favorites</TabsTrigger>
+                <TabsList className="h-auto sm:h-11 mb-6 w-full grid grid-cols-3 sm:inline-flex sm:w-auto gap-1 sm:gap-0 p-1">
+                  <TabsTrigger value="all" className="px-2 sm:px-6 text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap py-2 sm:py-1.5">All ({total})</TabsTrigger>
+                  <TabsTrigger value="collaborating" className="px-2 sm:px-6 text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap py-2 sm:py-1.5">
+                    <span className="sm:hidden">Collab ({collaboratingTotal})</span>
+                    <span className="hidden sm:inline">Collaborating ({collaboratingTotal})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="favorites" className="px-2 sm:px-6 text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap py-2 sm:py-1.5">Favorites</TabsTrigger>
                 </TabsList>
 
                 {/* All Influencers Tab */}
@@ -615,15 +618,17 @@ export const Influencers = () => {
                       {influencers.map((influencer) => renderInfluencerCard(influencer, false))}
 
                       {/* Pagination */}
-                      <div className="flex items-center justify-between border-t pt-6 mt-6">
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t pt-6 mt-6">
+                        <p className="text-sm text-muted-foreground text-center sm:text-left">
                           Page <span className="font-medium">{page}</span> of{" "}
                           <span className="font-medium">{totalPages}</span>
                           <span className="ml-2">({total} total)</span>
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center sm:justify-end gap-2">
                           <Button
                             variant="outline"
+                            size="sm"
+                            className="flex-1 sm:flex-initial"
                             onClick={() => handlePageChange(page - 1)}
                             disabled={page <= 1}
                           >
@@ -632,6 +637,8 @@ export const Influencers = () => {
                           </Button>
                           <Button
                             variant="outline"
+                            size="sm"
+                            className="flex-1 sm:flex-initial"
                             onClick={() => handlePageChange(page + 1)}
                             disabled={page >= totalPages}
                           >
