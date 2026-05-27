@@ -6,15 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
-interface PricingPlan {
-  name: string;
-  price: string;
-  yearlyPrice: string;
-  description: string;
-  features: string[];
-  highlighted: boolean;
-}
+import type { PricingPlan } from "./pricingPlans";
 
 interface PricingToggleProps {
   plans: PricingPlan[];

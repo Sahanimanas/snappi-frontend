@@ -19,6 +19,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -43,6 +53,7 @@ import {
   Clock,
   Link2,
   Star,
+  Trash2,
 } from "lucide-react";
 import { SendContractDialog } from "@/components/SendContractDialog";
 import { ReviewDialog } from "@/components/reviews/ReviewDialog";
@@ -116,6 +127,15 @@ export const CampaignDetail = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewInfluencer, setReviewInfluencer] = useState<any>(null);
 
+  // Remove influencer states
+  const [removeTarget, setRemoveTarget] = useState<any>(null);
+  const [removing, setRemoving] = useState(false);
+
+  // Budget allocation states
+  const [allocateTarget, setAllocateTarget] = useState<any>(null);
+  const [allocateAmount, setAllocateAmount] = useState<string>("");
+  const [allocating, setAllocating] = useState(false);
+
   useEffect(() => {
     if (id) {
       fetchCampaign();
@@ -174,6 +194,69 @@ export const CampaignDetail = () => {
   const handleOpenContractDialog = (influencer: any) => {
     setContractInfluencer(influencer);
     setContractDialogOpen(true);
+  };
+
+  const isContractLocked = (influencerId: string) => {
+    const s = contractStatuses[influencerId]?.status;
+    return s === 'accepted' || s === 'rejected' || s === 'connected';
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!removeTarget || !id) return;
+    setRemoving(true);
+    const result = await campaignsAPI.removeInfluencer(id, removeTarget._id);
+    setRemoving(false);
+
+    if (result.success) {
+      toast({ title: "Removed", description: `${removeTarget.name || 'Influencer'} removed from campaign` });
+      setRemoveTarget(null);
+      fetchCampaign();
+      fetchContractStatuses();
+    } else {
+      toast({
+        title: "Cannot remove",
+        description: result.message || "Failed to remove influencer",
+        variant: "destructive",
+      });
+      setRemoveTarget(null);
+    }
+  };
+
+  const openAllocateDialog = (influencer: any) => {
+    setAllocateTarget(influencer);
+    setAllocateAmount(
+      influencer?.allocatedBudget != null ? String(influencer.allocatedBudget) : ""
+    );
+  };
+
+  const handleConfirmAllocate = async () => {
+    if (!allocateTarget || !id) return;
+    const amount = Number(allocateAmount);
+    if (!isFinite(amount) || amount < 0) {
+      toast({ title: "Invalid amount", description: "Enter a non-negative number", variant: "destructive" });
+      return;
+    }
+    setAllocating(true);
+    const result = await campaignsAPI.allocateBudget(id, allocateTarget._id, amount);
+    setAllocating(false);
+
+    if (result.success) {
+      toast({ title: "Budget allocated", description: `${formatCurrency(amount)} allocated to ${allocateTarget.name || 'influencer'}` });
+      setAllocateTarget(null);
+      setAllocateAmount("");
+      fetchCampaign();
+    } else {
+      toast({
+        title: "Failed to allocate",
+        description: result.message || "Could not update allocation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    const ccy = (campaign as any)?.currency && (campaign as any).currency !== 'USD' ? `${(campaign as any).currency} ` : '$';
+    return `${ccy}${(value || 0).toLocaleString()}`;
   };
 
   const getContractStatusBadge = (influencerId: string) => {
@@ -330,6 +413,14 @@ export const CampaignDetail = () => {
   const budgetTotal = campaign?.budget?.total || 1;
   const budgetPercent = Math.round((budgetSpent / budgetTotal) * 100);
 
+  const shortlisted = Array.isArray(campaign?.influencers)
+    ? (campaign!.influencers as any[]).filter((inf) => inf && typeof inf === 'object')
+    : [];
+  const shortlistedReach = shortlisted.reduce((sum, inf) => sum + getTotalFollowers(inf), 0);
+  const avgEngagement = shortlisted.length
+    ? shortlisted.reduce((sum, inf) => sum + getAvgEngagement(inf), 0) / shortlisted.length
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
@@ -412,13 +503,13 @@ export const CampaignDetail = () => {
               },
               {
                 label: "Total Reach",
-                value: formatNumber(campaign.performance?.totalReach || 0),
+                value: formatNumber(shortlistedReach),
                 icon: Eye,
                 color: "text-blue-600",
               },
               {
-                label: "Engagement",
-                value: formatNumber(campaign.performance?.totalEngagement || 0),
+                label: "Avg. Engagement",
+                value: `${avgEngagement.toFixed(1)}%`,
                 icon: TrendingUp,
                 color: "text-purple-600",
               },
@@ -583,6 +674,20 @@ export const CampaignDetail = () => {
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-2 shrink-0">
+                            {contractStatuses[inf._id]?.status === 'accepted' && (
+                              <Button
+                                variant={inf.allocatedBudget > 0 ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => openAllocateDialog(inf)}
+                                className="gap-1.5"
+                                title={inf.allocatedBudget > 0 ? `Edit allocation (${formatCurrency(inf.allocatedBudget)})` : 'Allocate budget'}
+                              >
+                                <DollarSign className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">
+                                  {inf.allocatedBudget > 0 ? formatCurrency(inf.allocatedBudget) : 'Allocate Budget'}
+                                </span>
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -627,6 +732,18 @@ export const CampaignDetail = () => {
                                 </>
                               )}
                             </Button>
+                            {!isContractLocked(inf._id) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setRemoveTarget(inf)}
+                                className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                aria-label={`Remove ${inf.name || 'influencer'} from campaign`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Remove</span>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -886,6 +1003,87 @@ export const CampaignDetail = () => {
           campaignName={campaign?.name || ""}
         />
       )}
+
+      {/* Allocate Budget Dialog */}
+      <Dialog
+        open={!!allocateTarget}
+        onOpenChange={(open) => {
+          if (!open && !allocating) {
+            setAllocateTarget(null);
+            setAllocateAmount("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Allocate Budget</DialogTitle>
+            <DialogDescription>
+              {allocateTarget ? (
+                <>Set how much of the campaign budget is allocated to <span className="font-medium">{allocateTarget.name || 'this influencer'}</span>. This contributes to the campaign's budget utilization.</>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Label htmlFor="allocate-amount">Amount ({(campaign as any)?.currency || 'USD'})</Label>
+            <Input
+              id="allocate-amount"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0"
+              value={allocateAmount}
+              onChange={(e) => setAllocateAmount(e.target.value)}
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">
+              Campaign total: {formatCurrency(campaign?.budget?.total || 0)} · Already utilized (others): {formatCurrency(Math.max(0, (campaign?.budget?.spent || 0) - (allocateTarget?.allocatedBudget || 0)))}
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                disabled={allocating}
+                onClick={() => { setAllocateTarget(null); setAllocateAmount(""); }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmAllocate} disabled={allocating || allocateAmount === ""}>
+                {allocating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Influencer Confirmation */}
+      <AlertDialog open={!!removeTarget} onOpenChange={(open) => !open && !removing && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove influencer from campaign?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeTarget ? (
+                <>
+                  This will remove <span className="font-medium">{removeTarget.name || 'this influencer'}</span> from the campaign.
+                  {contractStatuses[removeTarget._id]?.status === 'pending' && (
+                    <> The pending contract sent to them will remain on record but they will no longer be part of this campaign.</>
+                  )}
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemove}
+              disabled={removing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {removing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

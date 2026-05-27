@@ -56,12 +56,12 @@ const navigationItems = [
     icon: Calendar,
     badge: "New",
   },
-  {
-    title: "Contracts",
-    href: "/contracts",
-    icon: FileText,
-    badge: null,
-  },
+  // {
+  //   title: "Contracts",
+  //   href: "/contracts",
+  //   icon: FileText,
+  //   badge: null,
+  // },
 ];
 
 const secondaryItems = [
@@ -80,11 +80,11 @@ const secondaryItems = [
     href: "/settings",
     icon: Settings,
   },
-  {
-    title: "Help Center",
-    href: "/help",
-    icon: HelpCircle,
-  },
+  // {
+  //   title: "Help Center",
+  //   href: "/help",
+  //   icon: HelpCircle,
+  // },
 ];
 
 const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -149,17 +149,6 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         </div>
       </nav>
 
-      <div className="p-4 border-t">
-        <div className="rounded-lg bg-primary-light p-4">
-          <h4 className="text-sm font-medium text-primary mb-2">Upgrade to Pro</h4>
-          <p className="text-xs text-muted-foreground mb-3">
-            Unlock unlimited searches and advanced analytics
-          </p>
-          <Button size="sm" className="w-full" asChild onClick={onNavigate}>
-            <Link to="/pricing">Upgrade Now</Link>
-          </Button>
-        </div>
-      </div>
     </div>
   );
 };

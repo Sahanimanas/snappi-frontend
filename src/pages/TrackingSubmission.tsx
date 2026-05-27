@@ -53,6 +53,8 @@ interface TrackingDetails {
     platform: string;
     postType: string;
     postUrl: string;
+    draftUrl?: string;
+    finalUrl?: string;
     caption?: string;
     status: string;
     submittedAt: string;
@@ -131,9 +133,13 @@ export const TrackingSubmission = () => {
   // Form state
   const [platform, setPlatform] = useState("");
   const [postType, setPostType] = useState("post");
-  const [postUrl, setPostUrl] = useState("");
+  const [draftUrl, setDraftUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [deliverable, setDeliverable] = useState("");
+
+  // Final-URL submission state (per post id)
+  const [finalUrlInputs, setFinalUrlInputs] = useState<Record<string, string>>({});
+  const [finalUrlSubmitting, setFinalUrlSubmitting] = useState<string | null>(null);
 
   useEffect(() => {
     if (code) {
@@ -177,11 +183,11 @@ export const TrackingSubmission = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!platform || !postUrl || !caption.trim()) {
+
+    if (!platform || !draftUrl || !caption.trim()) {
       toast({
         title: "Missing Fields",
-        description: "Please select a platform, enter the post URL, and provide a caption",
+        description: "Please select a platform, enter the draft URL, and provide a caption",
         variant: "destructive",
       });
       return;
@@ -189,7 +195,7 @@ export const TrackingSubmission = () => {
 
     // Basic URL validation
     try {
-      new URL(postUrl);
+      new URL(draftUrl);
     } catch {
       toast({
         title: "Invalid URL",
@@ -200,7 +206,7 @@ export const TrackingSubmission = () => {
     }
 
     setSubmitting(true);
-    
+
     try {
       // Submit post using the public endpoint
       const response = await fetch(`${API_BASE_URL}/tracking-links/submit/${code}`, {
@@ -211,24 +217,24 @@ export const TrackingSubmission = () => {
         body: JSON.stringify({
           platform,
           postType,
-          postUrl,
+          draftUrl,
           caption,
           deliverable: deliverable || undefined,
         }),
       });
-      
+
       const result = await response.json();
 
       if (result.success) {
         setSubmitted(true);
         toast({
           title: "Success!",
-          description: "Your post has been submitted for review",
+          description: "Your draft has been submitted for review",
         });
         // Reset form
         setPlatform("");
         setPostType("post");
-        setPostUrl("");
+        setDraftUrl("");
         setCaption("");
         setDeliverable("");
         // Refresh details to show the new post
@@ -248,8 +254,43 @@ export const TrackingSubmission = () => {
         variant: "destructive",
       });
     }
-    
+
     setSubmitting(false);
+  };
+
+  const handleSubmitFinalUrl = async (postId: string) => {
+    const value = (finalUrlInputs[postId] || "").trim();
+    if (!value) {
+      toast({ title: "Missing Final URL", description: "Enter the final post URL first", variant: "destructive" });
+      return;
+    }
+    try {
+      new URL(value);
+    } catch {
+      toast({ title: "Invalid URL", description: "Please enter a valid URL", variant: "destructive" });
+      return;
+    }
+
+    setFinalUrlSubmitting(postId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/tracking-links/submit/${code}/posts/${postId}/final-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finalUrl: value }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: "Final URL submitted", description: "The brand can now see your final post." });
+        setFinalUrlInputs(prev => { const { [postId]: _, ...rest } = prev; return rest; });
+        fetchDetails();
+      } else {
+        toast({ title: "Error", description: result.message || "Failed to submit final URL", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error('Error submitting final URL:', err);
+      toast({ title: "Error", description: "Failed to submit final URL.", variant: "destructive" });
+    }
+    setFinalUrlSubmitting(null);
   };
 
   if (loading) {
@@ -369,14 +410,17 @@ export const TrackingSubmission = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="postUrl">Post URL *</Label>
+                <Label htmlFor="draftUrl">Draft Post URL *</Label>
                 <Input
-                  id="postUrl"
+                  id="draftUrl"
                   type="url"
-                  placeholder="https://instagram.com/p/..."
-                  value={postUrl}
-                  onChange={(e) => setPostUrl(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  value={draftUrl}
+                  onChange={(e) => setDraftUrl(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Please submit the draft post URL link for public access – Google Drive, OneDrive, Dropbox or any other cloud URL.
+                </p>
               </div>
 
               {details?.campaign?.deliverables && details.campaign.deliverables.length > 0 && (
@@ -412,7 +456,7 @@ export const TrackingSubmission = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={submitting || !platform || !postUrl || !caption.trim()}
+                disabled={submitting || !platform || !draftUrl || !caption.trim()}
               >
                 {submitting ? (
                   <>
@@ -422,7 +466,7 @@ export const TrackingSubmission = () => {
                 ) : (
                   <>
                     <Check className="h-4 w-4 mr-2" />
-                    Submit Post
+                    Submit Draft
                   </>
                 )}
               </Button>
@@ -438,41 +482,93 @@ export const TrackingSubmission = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {details.submittedPosts.map((post) => (
-                  <div
-                    key={post._id}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <PlatformIcon platform={post.platform} className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm font-medium capitalize">
-                          {post.platform} {post.postType}
-                        </p>
-                        <a
-                          href={post.postUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                {details.submittedPosts.map((post) => {
+                  const draft = post.draftUrl || post.postUrl;
+                  return (
+                    <div key={post._id} id={`post-${post._id}`} className="p-3 bg-muted/30 rounded-lg space-y-2 scroll-mt-24">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <PlatformIcon platform={post.platform} className="h-5 w-5" />
+                          <p className="text-sm font-medium capitalize">
+                            {post.platform} {post.postType}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            post.status === "approved"
+                              ? "default"
+                              : post.status === "rejected"
+                              ? "destructive"
+                              : "outline"
+                          }
+                          className="capitalize"
                         >
-                          View post <ExternalLink className="h-3 w-3" />
-                        </a>
+                          {post.status}
+                        </Badge>
+                      </div>
+
+                      <div className="text-xs space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-14 shrink-0">Draft:</span>
+                          <a
+                            href={draft}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex items-center gap-1 truncate"
+                          >
+                            <span className="truncate">{draft}</span>
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
+                        </div>
+
+                        {post.finalUrl ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground w-14 shrink-0">Final:</span>
+                            <a
+                              href={post.finalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline flex items-center gap-1 truncate"
+                            >
+                              <span className="truncate">{post.finalUrl}</span>
+                              <ExternalLink className="h-3 w-3 shrink-0" />
+                            </a>
+                          </div>
+                        ) : post.status === 'approved' ? (
+                          <div className="pt-2 space-y-1">
+                            <Label htmlFor={`final-${post._id}`} className="text-xs">
+                              Please submit the final post URL from the social media platform.
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id={`final-${post._id}`}
+                                type="url"
+                                placeholder="https://instagram.com/p/..."
+                                value={finalUrlInputs[post._id] || ''}
+                                onChange={(e) =>
+                                  setFinalUrlInputs((prev) => ({ ...prev, [post._id]: e.target.value }))
+                                }
+                                className="h-8 text-xs"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleSubmitFinalUrl(post._id)}
+                                disabled={finalUrlSubmitting === post._id || !(finalUrlInputs[post._id] || '').trim()}
+                              >
+                                {finalUrlSubmitting === post._id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Add'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
-                    <Badge
-                      variant={
-                        post.status === "approved"
-                          ? "default"
-                          : post.status === "rejected"
-                          ? "destructive"
-                          : "outline"
-                      }
-                      className="capitalize"
-                    >
-                      {post.status}
-                    </Badge>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

@@ -121,7 +121,7 @@ export const ReferEarn = () => {
           </Card>
 
           {/* How the Referral Mechanism Can Work Technically */}
-          <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
+          {/* <Card className="hover-lift border-0 shadow-card bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-2xl">How the Referral Mechanism Can Work Technically</CardTitle>
             </CardHeader>
@@ -167,7 +167,7 @@ export const ReferEarn = () => {
                 <li>Provide built-in share buttons (WhatsApp, Facebook, Email, LinkedIn).</li>
               </ul>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Terms */}
           <Card className="border border-muted/50 bg-muted/20">

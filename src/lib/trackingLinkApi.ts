@@ -34,7 +34,7 @@ export interface ApiResponse<T = any> {
 export interface SubmitPostData {
   platform: string;
   postType?: string;
-  postUrl: string;
+  draftUrl: string;
   caption?: string;
   postedAt?: string;
 }
@@ -44,6 +44,9 @@ export interface SubmittedPost {
   platform: string;
   postType: string;
   postUrl: string;
+  draftUrl?: string;
+  finalUrl?: string;
+  finalUrlSubmittedAt?: string;
   caption?: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
@@ -165,6 +168,23 @@ export const trackingLinkAPI = {
     } catch (error) {
       console.error('Error submitting post:', error);
       return { success: false, message: 'Failed to submit post' };
+    }
+  },
+
+  /**
+   * Submit the final (published) URL for an approved post (public)
+   */
+  submitFinalUrl: async (code: string, postId: string, finalUrl: string): Promise<ApiResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tracking-links/submit/${code}/posts/${postId}/final-url`, {
+        method: 'POST',
+        headers: publicHeaders(),
+        body: JSON.stringify({ finalUrl }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error submitting final URL:', error);
+      return { success: false, message: 'Failed to submit final URL' };
     }
   },
 
