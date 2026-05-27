@@ -686,6 +686,12 @@ export const CampaignDetail = () => {
                       {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : "—"}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery Due Date</span>
+                    <span>
+                      {campaign.deliveryDueDate ? new Date(campaign.deliveryDueDate).toLocaleDateString() : "—"}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Platforms</span>
                     <div className="flex gap-1">

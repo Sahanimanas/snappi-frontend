@@ -240,6 +240,7 @@ export interface Campaign {
   budget?: { total: number; spent?: number; remaining?: number };
   startDate?: string;
   endDate?: string;
+  deliveryDueDate?: string;
   targetPlatforms: string[];
   productUrls?: string[];
   influencers?: string[];

@@ -65,6 +65,7 @@ interface FormData {
   budget: string;
   startDate: string;
   endDate: string;
+  deliveryDueDate: string;
   targetPlatforms: string[];
   productUrls: string[];
   creatorBrief: string;
@@ -91,6 +92,7 @@ export const CreateCampaign = () => {
     budget: "",
     startDate: new Date().toISOString().split("T")[0],
     endDate: "",
+    deliveryDueDate: "",
     targetPlatforms: [],
     productUrls: [],
     creatorBrief: "",
@@ -128,6 +130,7 @@ export const CreateCampaign = () => {
       budget: c.budget?.total?.toString() || "",
       startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
+      deliveryDueDate: (c as any).deliveryDueDate ? new Date((c as any).deliveryDueDate).toISOString().split("T")[0] : "",
       targetPlatforms: c.targetPlatforms || [],
       productUrls: c.productUrls || [],
       creatorBrief: (c as any).creatorBrief || "",
@@ -224,6 +227,7 @@ export const CreateCampaign = () => {
       budget: formData.budget ? { total: parseFloat(formData.budget) } : undefined,
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
+      deliveryDueDate: formData.deliveryDueDate || undefined,
       targetPlatforms: formData.targetPlatforms,
       productUrls: formData.productUrls.filter(url => url.trim() !== ""),
       creatorBrief: formData.creatorBrief.trim() || undefined,
@@ -582,6 +586,26 @@ Example:
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="deliveryDueDate" className="text-xs">Delivery Due Date</Label>
+                  <Input
+                    id="deliveryDueDate"
+                    type="date"
+                    name="deliveryDueDate"
+                    value={formData.deliveryDueDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const year = val.split('-')[0];
+                      if (year && year.length > 4) return;
+                      handleChange(e);
+                    }}
+                    max="9999-12-31"
+                    className="h-9 w-full sm:w-60"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shortlisted influencers who haven't submitted their deliverables will automatically be emailed a reminder 24 hours before this date.
+                  </p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   List what each influencer needs to deliver for this campaign. Influencers will select the matching deliverable when submitting their post.
                 </p>
