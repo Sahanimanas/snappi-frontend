@@ -233,7 +233,7 @@ const STYLES = `
   .creators-root .s-emoji { font-size: 3rem; margin-bottom: 14px; animation: creators-pop 0.5s ease; display: block; }
   @keyframes creators-pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
   .creators-root .s-title { font-family:'Cabinet Grotesk','Inter',sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; }
-  .creators-root .s-body { font-size: 0.86rem; color: var(--gray-2); line-height: 1.7; }
+  .creators-root .s-body { font-size: 1.25rem; color: var(--blue); line-height: 1.5; font-weight: 700; }
   .creators-root .s-body strong { color: var(--blue); }
 
   .creators-root .ai-section { position: relative; z-index: 1; padding: 86px 24px; max-width: 1200px; margin: 0 auto; }
@@ -466,8 +466,7 @@ const BODY_HTML = `
         </div>
         <div class="success-state" id="success-state">
           <span class="s-emoji">🎉</span>
-          <div class="s-title">You're on Snappi!</div>
-          <p class="s-body">Your profile is under review and will be live in Snappi's AI search within 48 hours.<br><br><strong>Check your inbox — we've sent you next steps.</strong></p>
+          <p class="s-body">Check your inbox — we've sent you next steps.</p>
         </div>
       </div>
     </div>
@@ -657,7 +656,7 @@ export const Creators = () => {
     const submitBtn = root.querySelector<HTMLButtonElement>(
       "#creators-submit-btn"
     );
-    const onSubmit = () => {
+    const onSubmit = async () => {
       const required = ["fname", "email", "niche", "followers"];
       let valid = true;
       const flag = (el: HTMLElement) => {
@@ -668,6 +667,9 @@ export const Creators = () => {
           el.style.boxShadow = "";
         }, 2500);
       };
+      const getVal = (id: string) =>
+        (root.querySelector<HTMLInputElement | HTMLSelectElement>(`#${id}`)?.value || "").trim();
+
       required.forEach((id) => {
         const el = root.querySelector<HTMLInputElement | HTMLSelectElement>(
           `#${id}`
@@ -678,10 +680,7 @@ export const Creators = () => {
         }
       });
       const handles = ["handle-ig", "handle-tt", "handle-yt", "handle-x"];
-      const anyHandle = handles.some((id) => {
-        const el = root.querySelector<HTMLInputElement>(`#${id}`);
-        return !!el?.value.trim();
-      });
+      const anyHandle = handles.some((id) => !!getVal(id));
       if (!anyHandle) {
         handles.forEach((id) => {
           const el = root.querySelector<HTMLInputElement>(`#${id}`);
@@ -690,10 +689,49 @@ export const Creators = () => {
         valid = false;
       }
       if (!valid) return;
-      const formContent = root.querySelector<HTMLElement>("#form-content");
-      const successState = root.querySelector<HTMLElement>("#success-state");
-      if (formContent) formContent.style.display = "none";
-      if (successState) successState.style.display = "block";
+
+      const payload = {
+        firstName: getVal("fname"),
+        lastName: getVal("lname"),
+        email: getVal("email"),
+        location: getVal("location"),
+        handles: {
+          instagram: getVal("handle-ig"),
+          tiktok: getVal("handle-tt"),
+          youtube: getVal("handle-yt"),
+          twitter: getVal("handle-x"),
+        },
+        niche: getVal("niche"),
+        followerCount: getVal("followers"),
+      };
+
+      submitBtn?.setAttribute("disabled", "true");
+      const originalLabel = submitBtn?.textContent;
+      if (submitBtn) submitBtn.textContent = "Submitting...";
+
+      const apiBase = (import.meta as any).env?.VITE_API_URL || "/api";
+      try {
+        const res = await fetch(`${apiBase}/creator-submissions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body?.success === false) {
+          throw new Error(body?.message || "Submission failed");
+        }
+        const formContent = root.querySelector<HTMLElement>("#form-content");
+        const successState = root.querySelector<HTMLElement>("#success-state");
+        if (formContent) formContent.style.display = "none";
+        if (successState) successState.style.display = "block";
+      } catch (err: any) {
+        const emailEl = root.querySelector<HTMLInputElement>("#email");
+        if (emailEl) flag(emailEl);
+        alert(err?.message || "Could not submit. Please try again.");
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+        if (submitBtn && originalLabel) submitBtn.textContent = originalLabel;
+      }
     };
     submitBtn?.addEventListener("click", onSubmit);
 

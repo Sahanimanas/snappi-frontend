@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { removeAdminToken, getStoredAdmin } from '@/lib/api';
 import AdminInfluencers from './AdminInfluencers';
 import AdminKeywords from './AdminKeywords';
+import AdminCreatorSubmissions from './AdminCreatorSubmissions';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('influencers');
@@ -99,6 +100,16 @@ const AdminDashboard = () => {
           >
             Keywords
           </button>
+          <button
+            onClick={() => selectTab('creator-submissions')}
+            className={`w-full text-left px-4 py-3 rounded-lg transition font-medium ${
+              activeTab === 'creator-submissions'
+                ? 'bg-blue-600 text-white'
+                : 'text-black hover:bg-gray-100'
+            }`}
+          >
+            Creator Submissions
+          </button>
         </nav>
 
         {/* Profile & Logout */}
@@ -132,6 +143,7 @@ const AdminDashboard = () => {
       <main className="md:ml-64 pt-14 md:pt-0">
         {activeTab === 'influencers' && <AdminInfluencers />}
         {activeTab === 'keywords' && <AdminKeywords />}
+        {activeTab === 'creator-submissions' && <AdminCreatorSubmissions />}
         {activeTab === 'users' && <div className="p-6"><h1 className="text-2xl font-bold text-black">Users Management</h1></div>}
         {activeTab === 'campaigns' && <div className="p-6"><h1 className="text-2xl font-bold text-black">Campaigns Management</h1></div>}
       </main>

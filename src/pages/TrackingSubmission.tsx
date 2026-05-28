@@ -33,6 +33,11 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+interface CampaignDeliverable {
+  description: string;
+  dueDate?: string | null;
+}
+
 interface TrackingDetails {
   _id: string;
   trackingCode: string;
@@ -40,7 +45,7 @@ interface TrackingDetails {
     _id: string;
     name: string;
     status: string;
-    deliverables?: string[];
+    deliverables?: Array<CampaignDeliverable | string>;
   };
   influencer: {
     _id: string;
@@ -431,11 +436,16 @@ export const TrackingSubmission = () => {
                       <SelectValue placeholder="Select the deliverable this post fulfils" />
                     </SelectTrigger>
                     <SelectContent>
-                      {details.campaign.deliverables.map((d, i) => (
-                        <SelectItem key={i} value={d}>
-                          {d}
-                        </SelectItem>
-                      ))}
+                      {details.campaign.deliverables.map((d, i) => {
+                        const desc = typeof d === "string" ? d : d?.description || "";
+                        const due = typeof d === "string" ? null : d?.dueDate;
+                        const dueLabel = due ? new Date(due).toLocaleDateString() : null;
+                        return (
+                          <SelectItem key={i} value={desc}>
+                            {desc}{dueLabel ? ` — due ${dueLabel}` : ""}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

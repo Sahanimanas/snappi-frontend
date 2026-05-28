@@ -56,6 +56,33 @@ const CURRENCIES = [
   { value: "AUD", symbol: "A$", label: "AUD" },
 ];
 
+interface DeliverableEntry {
+  description: string;
+  dueDate: string;
+}
+
+type MetricKey = 'followers' | 'likes' | 'comments' | 'reach' | 'engagement';
+type ConditionKey = 'greater_than' | 'up_to';
+
+interface SuccessMetricEntry {
+  metric: MetricKey | "";
+  condition: ConditionKey | "";
+  value: string;
+}
+
+const METRIC_OPTIONS: { value: MetricKey; label: string }[] = [
+  { value: 'followers', label: 'Followers' },
+  { value: 'likes', label: 'Likes' },
+  { value: 'comments', label: 'Comments' },
+  { value: 'reach', label: 'Reach' },
+  { value: 'engagement', label: 'Engagement' },
+];
+
+const CONDITION_OPTIONS: { value: ConditionKey; label: string }[] = [
+  { value: 'greater_than', label: 'Greater Than' },
+  { value: 'up_to', label: 'Up To' },
+];
+
 interface FormData {
   name: string;
   description: string;
@@ -65,14 +92,23 @@ interface FormData {
   budget: string;
   startDate: string;
   endDate: string;
-  deliveryDueDate: string;
   targetPlatforms: string[];
   productUrls: string[];
   creatorBrief: string;
   scope: string;
-  successMetrics: string;
-  deliverables: string[];
+  successMetrics: SuccessMetricEntry[];
+  deliverables: DeliverableEntry[];
 }
+
+const normalizeDeliverable = (d: any): DeliverableEntry => {
+  if (typeof d === "string") return { description: d, dueDate: "" };
+  if (d && typeof d === "object") {
+    const desc = typeof d.description === "string" ? d.description : "";
+    const due = d.dueDate ? new Date(d.dueDate).toISOString().split("T")[0] : "";
+    return { description: desc, dueDate: due };
+  }
+  return { description: "", dueDate: "" };
+};
 
 export const CreateCampaign = () => {
   const navigate = useNavigate();
@@ -92,13 +128,12 @@ export const CreateCampaign = () => {
     budget: "",
     startDate: new Date().toISOString().split("T")[0],
     endDate: "",
-    deliveryDueDate: "",
     targetPlatforms: [],
     productUrls: [],
     creatorBrief: "",
     scope: "",
-    successMetrics: "",
-    deliverables: [""],
+    successMetrics: [{ metric: "", condition: "", value: "" }],
+    deliverables: [{ description: "", dueDate: "" }],
   });
 
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -130,13 +165,22 @@ export const CreateCampaign = () => {
       budget: c.budget?.total?.toString() || "",
       startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
-      deliveryDueDate: (c as any).deliveryDueDate ? new Date((c as any).deliveryDueDate).toISOString().split("T")[0] : "",
       targetPlatforms: c.targetPlatforms || [],
       productUrls: c.productUrls || [],
       creatorBrief: (c as any).creatorBrief || "",
       scope: (c as any).scope || "",
-      successMetrics: (c as any).successMetrics || "",
-      deliverables: ((c as any).deliverables && (c as any).deliverables.length > 0) ? (c as any).deliverables : [""],
+      successMetrics:
+        Array.isArray((c as any).successMetrics) && (c as any).successMetrics.length > 0
+          ? (c as any).successMetrics.map((m: any) => ({
+              metric: (m?.metric as MetricKey) || "",
+              condition: (m?.condition as ConditionKey) || "",
+              value: m?.value != null ? String(m.value) : "",
+            }))
+          : [{ metric: "", condition: "", value: "" }],
+      deliverables:
+        Array.isArray((c as any).deliverables) && (c as any).deliverables.length > 0
+          ? (c as any).deliverables.map(normalizeDeliverable)
+          : [{ description: "", dueDate: "" }],
     });
     setFetching(false);
   };
@@ -187,7 +231,10 @@ export const CreateCampaign = () => {
   };
 
   const addDeliverable = () => {
-    setFormData((prev) => ({ ...prev, deliverables: [...prev.deliverables, ""] }));
+    setFormData((prev) => ({
+      ...prev,
+      deliverables: [...prev.deliverables, { description: "", dueDate: "" }],
+    }));
     setHasUnsavedChanges(true);
   };
 
@@ -199,10 +246,46 @@ export const CreateCampaign = () => {
     setHasUnsavedChanges(true);
   };
 
-  const updateDeliverable = (index: number, value: string) => {
+  const updateDeliverableField = (
+    index: number,
+    field: keyof DeliverableEntry,
+    value: string
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      deliverables: prev.deliverables.map((d, i) => (i === index ? value : d)),
+      deliverables: prev.deliverables.map((d, i) =>
+        i === index ? { ...d, [field]: value } : d
+      ),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const addSuccessMetric = () => {
+    setFormData((prev) => ({
+      ...prev,
+      successMetrics: [...prev.successMetrics, { metric: "", condition: "", value: "" }],
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const removeSuccessMetric = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      successMetrics: prev.successMetrics.filter((_, i) => i !== index),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const updateSuccessMetricField = <K extends keyof SuccessMetricEntry>(
+    index: number,
+    field: K,
+    value: SuccessMetricEntry[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      successMetrics: prev.successMetrics.map((m, i) =>
+        i === index ? { ...m, [field]: value } : m
+      ),
     }));
     setHasUnsavedChanges(true);
   };
@@ -227,13 +310,23 @@ export const CreateCampaign = () => {
       budget: formData.budget ? { total: parseFloat(formData.budget) } : undefined,
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
-      deliveryDueDate: formData.deliveryDueDate || undefined,
       targetPlatforms: formData.targetPlatforms,
       productUrls: formData.productUrls.filter(url => url.trim() !== ""),
       creatorBrief: formData.creatorBrief.trim() || undefined,
       scope: formData.scope.trim() || undefined,
-      successMetrics: formData.successMetrics.trim() || undefined,
-      deliverables: formData.deliverables.map(d => d.trim()).filter(d => d !== ""),
+      successMetrics: formData.successMetrics
+        .filter((m) => m.metric && m.condition && m.value !== "" && !isNaN(Number(m.value)))
+        .map((m) => ({
+          metric: m.metric,
+          condition: m.condition,
+          value: Number(m.value),
+        })),
+      deliverables: formData.deliverables
+        .map((d) => ({
+          description: d.description.trim(),
+          dueDate: d.dueDate || null,
+        }))
+        .filter((d) => d.description !== ""),
     };
 
     const result = isEditMode
@@ -586,38 +679,41 @@ Example:
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="deliveryDueDate" className="text-xs">Delivery Due Date</Label>
-                  <Input
-                    id="deliveryDueDate"
-                    type="date"
-                    name="deliveryDueDate"
-                    value={formData.deliveryDueDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const year = val.split('-')[0];
-                      if (year && year.length > 4) return;
-                      handleChange(e);
-                    }}
-                    max="9999-12-31"
-                    className="h-9 w-full sm:w-60"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Shortlisted influencers who haven't submitted their deliverables will automatically be emailed a reminder 24 hours before this date.
-                  </p>
-                </div>
                 <p className="text-xs text-muted-foreground">
-                  List what each influencer needs to deliver for this campaign. Influencers will select the matching deliverable when submitting their post.
+                  List what each influencer needs to deliver for this campaign and the due date for each one. Influencers will be emailed a reminder 24 hours before the earliest due date and will select the matching deliverable when submitting their post.
                 </p>
                 {formData.deliverables.map((d, idx) => (
-                  <div key={idx} className="flex gap-2 items-start">
-                    <Textarea
-                      value={d}
-                      onChange={(e) => updateDeliverable(idx, e.target.value)}
-                      placeholder={`e.g., 1 Instagram Reel featuring product, with caption tagging @brand`}
-                      rows={2}
-                      className="resize-none flex-1"
-                    />
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row gap-2 items-start rounded-md border p-3"
+                  >
+                    <div className="flex-1 w-full space-y-2">
+                      <Textarea
+                        value={d.description}
+                        onChange={(e) => updateDeliverableField(idx, "description", e.target.value)}
+                        placeholder={`e.g., 1 Instagram Reel featuring product, with caption tagging @brand`}
+                        rows={2}
+                        className="resize-none"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor={`due-${idx}`} className="text-xs whitespace-nowrap">
+                          Due date
+                        </Label>
+                        <Input
+                          id={`due-${idx}`}
+                          type="date"
+                          value={d.dueDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const year = val.split('-')[0];
+                            if (year && year.length > 4) return;
+                            updateDeliverableField(idx, "dueDate", val);
+                          }}
+                          max="9999-12-31"
+                          className="h-9 w-full sm:w-48"
+                        />
+                      </div>
+                    </div>
                     {formData.deliverables.length > 1 && (
                       <Button
                         type="button"
@@ -625,6 +721,7 @@ Example:
                         size="icon"
                         onClick={() => removeDeliverable(idx)}
                         className="shrink-0"
+                        aria-label="Remove deliverable"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -656,14 +753,70 @@ Example:
                 <p className="text-xs text-muted-foreground">
                   Define measurable success criteria to evaluate campaign performance at completion.
                 </p>
-                <Textarea
-                  name="successMetrics"
-                  value={formData.successMetrics}
-                  onChange={handleChange}
-                  placeholder="e.g., >20,000 views, >2,000 clicks, >500 new followers, 5% engagement rate..."
-                  rows={4}
-                  className="resize-none"
-                />
+                {formData.successMetrics.map((m, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <Select
+                      value={m.metric}
+                      onValueChange={(v) =>
+                        updateSuccessMetricField(idx, "metric", v as MetricKey)
+                      }
+                    >
+                      <SelectTrigger className="h-9 sm:flex-1">
+                        <SelectValue placeholder="Select metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {METRIC_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={m.condition}
+                      onValueChange={(v) =>
+                        updateSuccessMetricField(idx, "condition", v as ConditionKey)
+                      }
+                    >
+                      <SelectTrigger className="h-9 sm:flex-1">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONDITION_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={m.value}
+                      onChange={(e) => updateSuccessMetricField(idx, "value", e.target.value)}
+                      placeholder="Enter value"
+                      className="h-9 sm:flex-1"
+                    />
+                    {formData.successMetrics.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeSuccessMetric(idx)}
+                        className="shrink-0 self-end sm:self-center"
+                        aria-label="Remove metric"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSuccessMetric}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Metric
+                </Button>
               </CardContent>
             </Card>
 

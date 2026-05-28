@@ -241,6 +241,12 @@ export interface Campaign {
   startDate?: string;
   endDate?: string;
   deliveryDueDate?: string;
+  deliverables?: Array<{ description: string; dueDate?: string | null }>;
+  successMetrics?: Array<{
+    metric: 'followers' | 'likes' | 'comments' | 'reach' | 'engagement';
+    condition: 'greater_than' | 'up_to';
+    value: number;
+  }>;
   targetPlatforms: string[];
   productUrls?: string[];
   influencers?: string[];

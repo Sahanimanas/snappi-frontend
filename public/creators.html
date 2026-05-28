@@ -260,7 +260,7 @@
   .s-emoji { font-size: 3rem; margin-bottom: 14px; animation: pop 0.5s ease; display: block; }
   @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
   .s-title { font-family:'Cabinet Grotesk','Inter',sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; }
-  .s-body { font-size: 0.86rem; color: var(--gray-2); line-height: 1.7; }
+  .s-body { font-size: 1.25rem; color: var(--blue); line-height: 1.5; font-weight: 700; }
   .s-body strong { color: var(--blue); }
 
   /* ── AI SECTION ── */
@@ -508,8 +508,7 @@
         </div>
         <div class="success-state" id="success-state">
           <span class="s-emoji">🎉</span>
-          <div class="s-title">You're on Snappi!</div>
-          <p class="s-body">Your profile is under review and will be live in Snappi's AI search within 48 hours.<br><br><strong>Check your inbox — we've sent you next steps.</strong></p>
+          <p class="s-body">Check your inbox — we've sent you next steps.</p>
         </div>
       </div>
     </div>
@@ -638,9 +637,10 @@
   document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
   // ── FORM SUBMIT ──
-  function handleSubmit() {
+  async function handleSubmit() {
     const required = ['fname','email','niche','followers'];
     let valid = true;
+    const getVal = (id) => (document.getElementById(id)?.value || '').trim();
     required.forEach(id => {
       const el = document.getElementById(id);
       if (!el.value.trim()) {
@@ -663,8 +663,41 @@
       valid = false;
     }
     if (!valid) return;
-    document.getElementById('form-content').style.display = 'none';
-    document.getElementById('success-state').style.display = 'block';
+
+    const payload = {
+      firstName: getVal('fname'),
+      lastName: getVal('lname'),
+      email: getVal('email'),
+      location: getVal('location'),
+      handles: {
+        instagram: getVal('handle-ig'),
+        tiktok: getVal('handle-tt'),
+        youtube: getVal('handle-yt'),
+        twitter: getVal('handle-x')
+      },
+      niche: getVal('niche'),
+      followerCount: getVal('followers')
+    };
+
+    const btn = document.querySelector('.form-card .btn-cta');
+    const originalLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
+    try {
+      const res = await fetch('/api/creator-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.message || 'Submission failed');
+      document.getElementById('form-content').style.display = 'none';
+      document.getElementById('success-state').style.display = 'block';
+    } catch (err) {
+      alert((err && err.message) || 'Could not submit. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+    }
   }
 </script>
 </body>

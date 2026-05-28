@@ -413,6 +413,18 @@ export const CampaignDetail = () => {
   const budgetTotal = campaign?.budget?.total || 1;
   const budgetPercent = Math.round((budgetSpent / budgetTotal) * 100);
 
+  const normalizedDeliverables: Array<{ description: string; dueDate?: string | null }> =
+    Array.isArray((campaign as any)?.deliverables)
+      ? (campaign as any).deliverables.map((d: any) =>
+          typeof d === "string"
+            ? { description: d, dueDate: null }
+            : { description: d?.description || "", dueDate: d?.dueDate || null }
+        )
+      : [];
+
+  const formatDueDate = (d?: string | null) =>
+    d ? new Date(d).toLocaleDateString() : "No due date";
+
   const shortlisted = Array.isArray(campaign?.influencers)
     ? (campaign!.influencers as any[]).filter((inf) => inf && typeof inf === 'object')
     : [];
@@ -622,8 +634,9 @@ export const CampaignDetail = () => {
                       {(campaign.influencers as any[]).map((inf: any) => (
                         <div
                           key={inf._id || inf}
-                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                          className="p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors space-y-3"
                         >
+                          <div className="flex items-center justify-between">
                           {/* Influencer Info */}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <Avatar className="h-10 w-10">
@@ -745,6 +758,30 @@ export const CampaignDetail = () => {
                               </Button>
                             )}
                           </div>
+                          </div>
+                          {normalizedDeliverables.length > 0 && (
+                            <div className="border-t pt-2.5 space-y-1.5">
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+                                Deliverables
+                              </p>
+                              <ul className="space-y-1">
+                                {normalizedDeliverables.map((d, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="flex items-start justify-between gap-3 text-xs"
+                                  >
+                                    <span className="flex-1 whitespace-pre-wrap break-words">
+                                      {d.description || "—"}
+                                    </span>
+                                    <span className="flex items-center gap-1 text-muted-foreground shrink-0">
+                                      <Calendar className="h-3 w-3" />
+                                      {formatDueDate(d.dueDate)}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -803,12 +840,6 @@ export const CampaignDetail = () => {
                       {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Delivery Due Date</span>
-                    <span>
-                      {campaign.deliveryDueDate ? new Date(campaign.deliveryDueDate).toLocaleDateString() : "—"}
-                    </span>
-                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Platforms</span>
                     <div className="flex gap-1">
@@ -823,6 +854,34 @@ export const CampaignDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Deliverables */}
+              {normalizedDeliverables.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Deliverables
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {normalizedDeliverables.map((d, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 rounded-md border bg-muted/30 space-y-1"
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {d.description || "—"}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>Due: {formatDueDate(d.dueDate)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Quick Actions */}
               <Card>
