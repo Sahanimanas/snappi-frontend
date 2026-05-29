@@ -4,7 +4,7 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
-
+console.log('API Base URL:', API_BASE_URL);
 // Token management - User
 const USER_TOKEN_KEY = 'snappi_user_token';
 const USER_DATA_KEY = 'snappi_user';
