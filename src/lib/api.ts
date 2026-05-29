@@ -3,9 +3,13 @@
  * Handles all communication with the Snappi backend API
  */
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'https://snappi-backend.vercel.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 console.log('API Base URL:', API_BASE_URL);
+if (!API_BASE_URL) {
+  console.error(
+    'VITE_API_URL is not set. Set it in frontend/.env (local) and in the Vercel project Environment Variables (production), then rebuild.'
+  );
+}
 // Token management - User
 const USER_TOKEN_KEY = 'snappi_user_token';
 const USER_DATA_KEY = 'snappi_user';
