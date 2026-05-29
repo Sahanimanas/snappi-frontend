@@ -4,7 +4,7 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-console.log('API Base URL:', API_BASE_URL);
+
 if (!API_BASE_URL) {
   console.error(
     'VITE_API_URL is not set. Set it in frontend/.env (local) and in the Vercel project Environment Variables (production), then rebuild.'
@@ -575,8 +575,10 @@ export interface CreatorSubmissionPayload {
 }
 
 export const creatorSubmissionsAPI = {
+  
   // Public — creator signup form posts here
   create: async (data: CreatorSubmissionPayload) =>
+
     apiRequest<CreatorSubmission>('/creator-submissions', {
       method: 'POST',
       body: JSON.stringify(data),
