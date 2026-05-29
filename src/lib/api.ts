@@ -3,7 +3,8 @@
  * Handles all communication with the Snappi backend API
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'https://snappi-backend.vercel.app/api';
 console.log('API Base URL:', API_BASE_URL);
 // Token management - User
 const USER_TOKEN_KEY = 'snappi_user_token';
@@ -533,6 +534,70 @@ export const formatNumber = (num: number): string => {
   return num.toString();
 };
 
+// ==================== CREATOR SUBMISSIONS API ====================
+
+export interface CreatorSubmission {
+  _id: string;
+  firstName: string;
+  lastName?: string;
+  email: string;
+  location?: string;
+  handles: {
+    instagram?: string;
+    tiktok?: string;
+    youtube?: string;
+    twitter?: string;
+  };
+  niche: string;
+  followerCount: string;
+  status: 'new' | 'reviewed' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatorSubmissionPayload {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  location?: string;
+  handles: {
+    instagram?: string;
+    tiktok?: string;
+    youtube?: string;
+    twitter?: string;
+  };
+  niche: string;
+  followerCount: string;
+}
+
+export const creatorSubmissionsAPI = {
+  // Public — creator signup form posts here
+  create: async (data: CreatorSubmissionPayload) =>
+    apiRequest<CreatorSubmission>('/creator-submissions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Admin
+  list: async (params: { search?: string; status?: string; page?: number; limit?: number } = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => v !== undefined && v !== '' && query.append(k, String(v)));
+    return apiRequest<CreatorSubmission[]>(`/creator-submissions?${query}`, { method: 'GET' }, true);
+  },
+
+  getById: async (id: string) =>
+    apiRequest<CreatorSubmission>(`/creator-submissions/${id}`, { method: 'GET' }, true),
+
+  updateStatus: async (id: string, status: CreatorSubmission['status']) =>
+    apiRequest<CreatorSubmission>(`/creator-submissions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }, true),
+
+  delete: async (id: string) =>
+    apiRequest(`/creator-submissions/${id}`, { method: 'DELETE' }, true),
+};
+
 // ==================== REVIEWS API ====================
 
 export interface Review {
@@ -569,4 +634,5 @@ export default {
   campaigns: campaignsAPI,
   dashboard: dashboardAPI,
   reviews: reviewsAPI,
+  creatorSubmissions: creatorSubmissionsAPI,
 };

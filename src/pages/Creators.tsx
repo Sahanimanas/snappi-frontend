@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { creatorSubmissionsAPI } from "@/lib/api";
 
 const STYLES = `
   :root {
@@ -709,16 +710,10 @@ export const Creators = () => {
       const originalLabel = submitBtn?.textContent;
       if (submitBtn) submitBtn.textContent = "Submitting...";
 
-      const apiBase = (import.meta as any).env?.VITE_API_URL || "/api";
       try {
-        const res = await fetch(`${apiBase}/creator-submissions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok || body?.success === false) {
-          throw new Error(body?.message || "Submission failed");
+        const result = await creatorSubmissionsAPI.create(payload);
+        if (!result.success) {
+          throw new Error(result.message || "Submission failed");
         }
         const formContent = root.querySelector<HTMLElement>("#form-content");
         const successState = root.querySelector<HTMLElement>("#success-state");

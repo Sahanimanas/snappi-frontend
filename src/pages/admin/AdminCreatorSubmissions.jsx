@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://snappi-backend.vercel.app/api';
 
 const STATUS_COLORS = {
   new: 'bg-blue-100 text-blue-700',
