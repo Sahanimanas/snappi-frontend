@@ -130,6 +130,7 @@ export const Creators = () => {
 
   // Toggle body class and load the page-specific font
   useEffect(() => {
+    console.log(import.meta.env.VITE_API_URL);
     document.body.classList.add("creators-page");
     const fontLink = document.createElement("link");
     fontLink.rel = "stylesheet";
@@ -139,6 +140,7 @@ export const Creators = () => {
       document.body.classList.remove("creators-page");
       fontLink.remove();
     };
+    
   }, []);
 
   // Typing animation for the hero AI demo
