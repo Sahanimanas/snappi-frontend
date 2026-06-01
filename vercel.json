@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/creators",
-      "destination": "/creators.html"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
